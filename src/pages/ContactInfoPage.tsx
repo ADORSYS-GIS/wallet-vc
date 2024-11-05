@@ -24,6 +24,9 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from "@adorsys-gis/status-service";
+import { MessageRepository } from "../storage/MessageRepository";
+
+const messageRepository = new MessageRepository();
 
 const ContactInfoPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -92,13 +95,16 @@ const ContactInfoPage: React.FC = () => {
         response: ServiceResponse<{ id: number }>
       ) => {
         if (response.status === ServiceResponseStatus.Success) {
-          setSnackbarMessage("Contact removed successfully....."); // Set success message
-          setSnackbarOpen(true); // Open Snackbar
 
-          // Navigate after a short delay
+          // Delete all messages associated with this contact
+          messageRepository.deleteAllByContact(contactId);
+
+          setSnackbarMessage("Contact and messages removed successfully."); // Set success message
+          setSnackbarOpen(true);
+
           setTimeout(() => {
             navigate("/contacts");
-          }, 2000); // Wait for 2 seconds before navigating
+          }, 2000);
         } else {
           console.error("Failed to delete contact:", response.payload);
         }
