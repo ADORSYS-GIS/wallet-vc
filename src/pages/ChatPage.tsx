@@ -7,6 +7,7 @@ import {
   Typography,
   Paper,
   IconButton,
+  Snackbar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import InfoIcon from "@mui/icons-material/Info";
@@ -21,10 +22,17 @@ import {
   ServiceResponseStatus,
 } from "@adorsys-gis/status-service";
 
-interface Message {
+import { MessageRepository } from "../storage/MessageRepository";
+import { v4 as uuidv4 } from "uuid";
+import DeleteIcon from "@mui/icons-material/Delete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+
+export interface Message {
   id: string;
   text: string;
   sender: string;
+  contactId: string;
+  timestamp: Date;
 }
 
 const ChatPage: React.FC = () => {
@@ -34,9 +42,14 @@ const ChatPage: React.FC = () => {
   const [contactName, setContactName] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
-  const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
+  const [deleteOptionsVisible, setDeleteOptionsVisible] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+  const [deletedMessage, setDeletedMessage] = useState<string>("");
 
   const contactService = new ContactService(eventBus);
+  const messageRepository = new MessageRepository();
 
   useEffect(() => {
     const fetchContactDetails = async () => {
@@ -67,20 +80,58 @@ const ChatPage: React.FC = () => {
     };
 
     fetchContactDetails();
-  }, [contactId, contactService, eventBus]);
+  }, [contactId, contactService]);
 
-  const handleSendMessage = () => {
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (contactId) {
+        const chatMessages = await messageRepository.getAllByContact(contactId);
+        setMessages(chatMessages);
+      }
+    };
+    fetchMessages();
+  }, [contactId]);
+
+  const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
 
+    if (!contactId) {
+      console.error("contactId is undefined. Cannot send message.");
+      return;
+    }
+
     const message: Message = {
-      id: String(messages.length + 1),
+      id: uuidv4(),
       text: newMessage,
       sender: "user",
+      contactId: contactId,
+      timestamp: new Date(),
     };
 
+    await messageRepository.create(message);
     setMessages((prevMessages) => [...prevMessages, message]);
     setNewMessage("");
-    setSelectedMedia(null);
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    await messageRepository.delete(messageId);
+    setMessages((prevMessages) =>
+      prevMessages.filter((msg) => msg.id !== messageId)
+    );
+    setDeletedMessage("Message deleted successfully!");
+    setSnackbarOpen(true);
+    setDeleteOptionsVisible((prev) => ({ ...prev, [messageId]: false })); // Hide delete options after deleting
+  };
+
+  const handleClickDelete = (messageId: string) => {
+    setDeleteOptionsVisible((prev) => ({
+      ...prev,
+      [messageId]: !prev[messageId],
+    }));
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -110,7 +161,9 @@ const ChatPage: React.FC = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h5">{contactName || "Chat"}</Typography>
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+          {contactName || "Chat"}
+        </Typography>
         <IconButton
           onClick={() => navigate(`/contact-info/${contactId}`)}
           aria-label="Contact Info"
@@ -128,6 +181,9 @@ const ChatPage: React.FC = () => {
           overflowY: "auto",
           backgroundColor: "rgba(0, 0, 0, 0.09)",
           borderRadius: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
         }}
       >
         {messages.map((msg) => (
@@ -136,22 +192,63 @@ const ChatPage: React.FC = () => {
             sx={{
               padding: 1,
               marginBottom: 1,
-              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start", 
-              backgroundColor: msg.sender === "user" ? "black" : "lightgrey",
-              color: msg.sender === "user" ? "white" : "black",
-              borderRadius: 1,
-              maxWidth: "70%",
+              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              backgroundColor:
+                msg.sender === "user" ? "lightgrey" : "lightgrey",
+              color: msg.sender === "user" ? "black" : "black",
+              borderRadius: 3,
+              display: "inline-block",
+              maxWidth: "50%",
               wordWrap: "break-word",
+              position: "relative",
             }}
           >
             <Typography
               variant="body1"
               sx={{
-                textAlign: msg.sender === "user" ? "right" : "left",
+                textAlign: "left",
               }}
             >
               {msg.text}
             </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                fontSize: "10",
+                color: "grey",
+              }}
+            >
+              {msg.timestamp.toLocaleString()} {/* Format timestamp */}
+            </Typography>
+
+            {/* Three dots for delete option */}
+            <IconButton
+              sx={{ position: "absolute", top: 5, right: -30}}
+              onClick={() => handleClickDelete(msg.id)}
+            >
+              <MoreVertIcon />
+            </IconButton>
+
+            {/* Delete Option */}
+            {deleteOptionsVisible[msg.id] && (
+              <Box sx={{ position: "absolute", top: 35, right: 5 }}>
+                <Button
+                  onClick={() => handleDeleteMessage(msg.id)}
+                  variant="contained"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  sx={{
+                    width: '90px',
+                    height: '25px',
+                    fontSize: '11px',
+                  }}
+                >
+                  Delete
+                </Button>
+              </Box>
+            )}
           </Paper>
         ))}
       </Box>
@@ -172,6 +269,20 @@ const ChatPage: React.FC = () => {
           Send
         </Button>
       </Box>
+      {/* Snackbar for delete confirmation */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={deletedMessage}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        sx={{
+          "& .MuiSnackbarContent-root": {
+            backgroundColor: "green",
+            color: "white",
+          },
+        }}
+      />
     </Box>
   );
 };
