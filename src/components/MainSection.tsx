@@ -29,7 +29,7 @@ const MainSection: React.FC<MainSectionProps> = ({ children }) => {
         <>
           <Avatar
             alt="QR Code"
-            src="/qr-placeholder.webp"
+            src="/assets/qr-placeholder.webp"
             sx={{
               width: { xs: 140, sm: 180 },
               height: { xs: 140, sm: 180 },
