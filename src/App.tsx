@@ -15,7 +15,15 @@ import Wallet from "./pages/Wallet";
 const theme = createTheme();
 
 function App() {
-  usePWA();
+  const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
+
+  // Know the state of the of the usePWA hook on the app
+  console.log({
+    isInstallable,
+    isInstalled,
+    isInstalling,
+    iOS,
+  });
 
   return (
     <ThemeProvider theme={theme}>

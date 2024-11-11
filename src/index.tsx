@@ -16,7 +16,6 @@ function TempApp() {
       {/* Wrap App with InstallPWAContextProvider */}
       <InstallPWAContextProvider
         component={isIosOrSafariDesktop() ? "tooltip" : "banner"}
-        installPromptTimeout={30000}
       >
         <App />
       </InstallPWAContextProvider>
