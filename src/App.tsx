@@ -1,18 +1,30 @@
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Route, Routes } from 'react-router-dom';
-import BottomNav from './components/BottomNav';
-import MainSection from './components/MainSection';
-import Navbar from './components/Navbar';
-import ActivitiesPage from './pages/ActivitiesPage';
-import ContactForm from './pages/ContactForm';
-import ContactsPage from './pages/ContactsPage';
-import SettingsPage from './pages/SettingsPage';
-import Wallet from './pages/Wallet';
+import { usePWA } from "@adorsys-gis/usepwa";
+import "@adorsys-gis/usepwa/dist/src/lib/components/main.css";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { Route, Routes } from "react-router-dom";
+import BottomNav from "./components/BottomNav";
+import MainSection from "./components/MainSection";
+import Navbar from "./components/Navbar";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import ContactForm from "./pages/ContactForm";
+import ContactsPage from "./pages/ContactsPage";
+import SettingsPage from "./pages/SettingsPage";
+import Wallet from "./pages/Wallet";
 
 // Create the theme for the app
 const theme = createTheme();
 
 function App() {
+  const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
+
+  // Know the state of the of the usePWA hook on the app
+  console.log({
+    isInstallable,
+    isInstalled,
+    isInstalling,
+    iOS,
+  });
+
   return (
     <ThemeProvider theme={theme}>
       <div className="App">
