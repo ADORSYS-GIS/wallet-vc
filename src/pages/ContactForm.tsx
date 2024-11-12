@@ -1,7 +1,21 @@
-import { ContactEventChannel, ContactService } from '@adorsys-gis/contact-service';
+import {
+  ContactEventChannel,
+  ContactService,
+} from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
-import { ServiceResponse, ServiceResponseStatus } from '@adorsys-gis/status-service';
-import { Box, Button, CircularProgress, TextField, Theme, Typography, useMediaQuery } from '@mui/material';
+import {
+  ServiceResponse,
+  ServiceResponseStatus,
+} from '@adorsys-gis/status-service';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  TextField,
+  Theme,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
 // Initialize the ContactService with eventBus
@@ -13,7 +27,9 @@ const AddContactForm: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isSmallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
+  const isSmallScreen = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.down('sm'),
+  );
 
   useEffect(() => {
     const handleContactCreated = (response: ServiceResponse<void>) => {
@@ -96,7 +112,11 @@ const AddContactForm: React.FC = () => {
           }}
           disabled={isLoading}
         >
-          {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Add Contact'}
+          {isLoading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            'Add Contact'
+          )}
         </Button>
       </form>
       {message && (

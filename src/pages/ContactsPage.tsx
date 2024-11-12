@@ -1,6 +1,13 @@
-import { Contact, ContactEventChannel, ContactService } from '@adorsys-gis/contact-service';
+import {
+  Contact,
+  ContactEventChannel,
+  ContactService,
+} from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
-import { ServiceResponse, ServiceResponseStatus } from '@adorsys-gis/status-service';
+import {
+  ServiceResponse,
+  ServiceResponseStatus,
+} from '@adorsys-gis/status-service';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, IconButton, Paper, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
@@ -29,11 +36,27 @@ const ContactPage: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 2, width: '100%', maxWidth: 600 }}>
-      <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#075E54', marginBottom: 2 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: 2,
+        width: '100%',
+        maxWidth: 600,
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 'bold', color: '#075E54', marginBottom: 2 }}
+      >
         Contact List
       </Typography>
-      {error && <Typography color="error" sx={{ fontWeight: 'bold', marginBottom: 2 }}>{error}</Typography>}
+      {error && (
+        <Typography color="error" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
+          {error}
+        </Typography>
+      )}
       {contacts.length > 0 ? (
         contacts.map((contact) => (
           <Paper
@@ -51,8 +74,15 @@ const ContactPage: React.FC = () => {
             }}
           >
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" sx={{ color: '#4A4A4A', fontWeight: 'bold' }}>{contact.name}</Typography>
-              <Typography variant="body2" sx={{ color: '#8A8A8A' }}>{contact.did}</Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
+              >
+                {contact.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#8A8A8A' }}>
+                {contact.did}
+              </Typography>
             </Box>
             <Box>
               <IconButton
