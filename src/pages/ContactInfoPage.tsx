@@ -11,7 +11,6 @@ import {
   DialogTitle,
   IconButton,
   Button,
-  Snackbar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
@@ -24,20 +23,23 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from "@adorsys-gis/status-service";
-import { MessageRepository } from "../storage/MessageRepository";
-
-const messageRepository = new MessageRepository();
+import {
+  MessageService,
+  MessageEventChannel,
+} from "@awambeng/message-service";
 
 const ContactInfoPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
   const navigate = useNavigate();
+
   const [contactName, setContactName] = useState<string>("");
   const [contactDID, setContactDID] = useState<string>("");
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const contactService = new ContactService(eventBus);
+  const messageService = new MessageService(eventBus);
 
   // Helper function to get initials from the contact's name
   const getInitials = (name: string) => {
@@ -59,8 +61,9 @@ const ContactInfoPage: React.FC = () => {
         ) {
           setContactName(response.payload.name);
           setContactDID(response.payload.did || "");
+          setContactError(null);
         } else {
-          console.error(response.payload);
+          setContactError("Failed to fetch contact details.");
         }
       };
 
@@ -71,7 +74,7 @@ const ContactInfoPage: React.FC = () => {
         eventBus.off(getContactChannel, handleContactReceived);
       };
     } else {
-      console.error("Contact ID is undefined.");
+      setContactError("Contact ID is undefined.");
     }
   }, [contactId, contactService, eventBus]);
 
@@ -95,18 +98,20 @@ const ContactInfoPage: React.FC = () => {
         response: ServiceResponse<{ id: number }>
       ) => {
         if (response.status === ServiceResponseStatus.Success) {
-
           // Delete all messages associated with this contact
-          messageRepository.deleteAllByContact(contactId);
+          messageService.deleteAllMessagesByContact(contactDID);
 
-          setSnackbarMessage("Contact and messages removed successfully."); // Set success message
-          setSnackbarOpen(true);
+          // Emit success notification event
+          eventBus.emit(
+            MessageEventChannel.DeleteAllByContactId,
+            "Contact and messages removed successfully."
+          );
 
           setTimeout(() => {
             navigate("/contacts");
           }, 2000);
         } else {
-          console.error("Failed to delete contact:", response.payload);
+          setDeleteError("Failed to delete contact.");
         }
       };
 
@@ -119,10 +124,6 @@ const ContactInfoPage: React.FC = () => {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
-
   return (
     <Box
       sx={{
@@ -130,11 +131,11 @@ const ContactInfoPage: React.FC = () => {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "space-between",
+        width: "100%",
         height: "100vh",
-        maxWidth: { xs: "100%", md: "400px" },
+        maxWidth: { xs: "100%", sm: 600, md: 800 },
         margin: "0 auto",
         backgroundColor: "rgba(0, 0, 0, 0.09)",
-        padding: { xs: 1, md: 2 },
       }}
     >
       {/* Header with Back Button */}
@@ -179,15 +180,34 @@ const ContactInfoPage: React.FC = () => {
         DID: {contactDID}
       </Typography>
 
+      {/* Display contact fetch error */}
+      {contactError && (
+        <Typography variant="body2" color="error.main" sx={{ marginBottom: 2 }}>
+          {contactError}
+        </Typography>
+      )}
+
       {/* Clickable Delete Text at the bottom */}
       <Typography
         variant="body2"
         color="error.main"
-        sx={{ cursor: "pointer", fontWeight: "bold", marginTop: "auto" }}
+        sx={{
+          cursor: "pointer",
+          fontWeight: "bold",
+          marginTop: "auto",
+          marginBottom: "16px",
+        }}
         onClick={handleDeleteClick}
       >
         Remove from Wallet
       </Typography>
+
+      {/* Display delete error */}
+      {deleteError && (
+        <Typography variant="body2" color="error.main" sx={{ marginBottom: 2 }}>
+          {deleteError}
+        </Typography>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
@@ -225,21 +245,6 @@ const ContactInfoPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Snackbar for success message */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={2000}
-        onClose={handleSnackbarClose}
-        message={snackbarMessage}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        sx={{
-          "& .MuiSnackbarContent-root": {
-            backgroundColor: "green",
-            color: "white",
-          },
-        }}
-      />
     </Box>
   );
 };

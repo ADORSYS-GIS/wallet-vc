@@ -55,8 +55,6 @@ const AddContactForm: React.FC = () => {
         padding: isSmallScreen ? '16px' : '32px',
         borderRadius: '12px',
         boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)',
-        maxWidth: '400px',
-        width: 'auto',
         margin: '20px auto',
       }}
     >
