@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -7,37 +7,37 @@ import {
   Typography,
   Paper,
   IconButton,
-} from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import InfoIcon from "@mui/icons-material/Info";
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Contact,
   ContactEventChannel,
   ContactService,
-} from "@adorsys-gis/contact-service";
-import { eventBus } from "@adorsys-gis/event-bus";
+} from '@adorsys-gis/contact-service';
+import { eventBus } from '@adorsys-gis/event-bus';
 import {
   ServiceResponse,
   ServiceResponseStatus,
-} from "@adorsys-gis/status-service";
+} from '@adorsys-gis/status-service';
 
 import {
   MessageService,
   MessageEventChannel,
   Message,
-} from "@awambeng/message-service";
-import DeleteIcon from "@mui/icons-material/Delete";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { v4 as uuidv4 } from "uuid";
+} from '@awambeng/message-service';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { v4 as uuidv4 } from 'uuid';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
   const navigate = useNavigate();
 
-  const [contactName, setContactName] = useState<string>("");
-  const [contactDID, setContactDID] = useState<string>("");
+  const [contactName, setContactName] = useState<string>('');
+  const [contactDID, setContactDID] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState<string>("");
+  const [newMessage, setNewMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteOptionsVisible, setDeleteOptionsVisible] = useState<{
     [key: string]: boolean;
@@ -62,7 +62,7 @@ const ChatPage: React.FC = () => {
             setContactDID(response.payload.did);
             setErrorMessage(null);
           } else {
-            setErrorMessage("Failed to fetch contact details.");
+            setErrorMessage('Failed to fetch contact details.');
           }
         };
 
@@ -73,7 +73,7 @@ const ChatPage: React.FC = () => {
           eventBus.off(getContactChannel, handleContactReceived);
         };
       } else {
-        setErrorMessage("Contact ID is undefined.");
+        setErrorMessage('Contact ID is undefined.');
       }
     };
 
@@ -86,7 +86,7 @@ const ChatPage: React.FC = () => {
         messageService.getAllMessagesByContact(contactDID);
 
         const handleMessagesReceived = (
-          response: ServiceResponse<Message[]>
+          response: ServiceResponse<Message[]>,
         ) => {
           if (
             response.status === ServiceResponseStatus.Success &&
@@ -95,7 +95,7 @@ const ChatPage: React.FC = () => {
             setMessages(response.payload);
             setErrorMessage(null);
           } else {
-            setErrorMessage("Failed to fetch messages.");
+            setErrorMessage('Failed to fetch messages.');
           }
         };
 
@@ -105,7 +105,7 @@ const ChatPage: React.FC = () => {
           eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
         };
       } else {
-        setErrorMessage("Contact DID is undefined.");
+        setErrorMessage('Contact DID is undefined.');
       }
     };
 
@@ -122,24 +122,24 @@ const ChatPage: React.FC = () => {
         setMessages((prevMessages) => [...prevMessages, response.payload]);
         setErrorMessage(null);
       } else {
-        setErrorMessage("Failed to send message.");
+        setErrorMessage('Failed to send message.');
       }
     };
 
     // Event listener for when a message is deleted
     const handleDeleteMessageEvent = (
-      response: ServiceResponse<{ id: string }>
+      response: ServiceResponse<{ id: string }>,
     ) => {
       if (
         response.status === ServiceResponseStatus.Success &&
         response.payload
       ) {
         setMessages((prevMessages) =>
-          prevMessages.filter((msg) => msg.id !== response.payload.id)
+          prevMessages.filter((msg) => msg.id !== response.payload.id),
         );
         setErrorMessage(null);
       } else {
-        setErrorMessage("Failed to delete message.");
+        setErrorMessage('Failed to delete message.');
       }
     };
 
@@ -155,19 +155,19 @@ const ChatPage: React.FC = () => {
   }, []);
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() === "") return;
+    if (newMessage.trim() === '') return;
 
     const message: Message = {
       id: uuidv4(),
       text: newMessage,
-      sender: "user",
+      sender: 'user',
       contactId: contactDID,
       timestamp: new Date(),
     };
 
     // Send the message without adding a new event listener
     messageService.createMessage(message);
-    setNewMessage(""); // Clear the input after sending
+    setNewMessage(''); // Clear the input after sending
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -185,27 +185,27 @@ const ChatPage: React.FC = () => {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100vh",
-        maxWidth: { xs: "100%", sm: 600, md: 800 },
-        margin: "0 auto",
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100vh',
+        maxWidth: { xs: '100%', sm: 600, md: 800 },
+        margin: '0 auto',
       }}
     >
       {/* Header */}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           padding: 2,
-          borderBottom: "5px solid #ccc",
-          position: "relative",
+          borderBottom: '5px solid #ccc',
+          position: 'relative',
         }}
       >
         <IconButton
-          onClick={() => navigate("/contacts")}
+          onClick={() => navigate('/contacts')}
           aria-label="Back"
           color="primary"
         >
@@ -215,16 +215,16 @@ const ChatPage: React.FC = () => {
         {/* Centered Title */}
         <Box
           sx={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)", // Centers the title horizontally
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
           }}
         >
           <Typography
             variant="h5"
-            sx={{ fontWeight: "bold", textAlign: "center" }}
+            sx={{ fontWeight: 'bold', textAlign: 'center' }}
           >
-            {contactName || "Chat"}
+            {contactName || 'Chat'}
           </Typography>
         </Box>
 
@@ -240,7 +240,7 @@ const ChatPage: React.FC = () => {
 
       {/* Display error message */}
       {errorMessage && (
-        <Box sx={{ padding: 2, backgroundColor: "red", color: "white" }}>
+        <Box sx={{ padding: 2, backgroundColor: 'red', color: 'white' }}>
           <Typography variant="body1">{errorMessage}</Typography>
         </Box>
       )}
@@ -250,11 +250,13 @@ const ChatPage: React.FC = () => {
         sx={{
           flexGrow: 1,
           padding: 2,
-          backgroundColor: "rgba(0, 0, 0, 0.09)",
+          backgroundColor: 'rgba(0, 0, 0, 0.09)',
           borderRadius: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         {messages.map((msg) => (
@@ -263,21 +265,21 @@ const ChatPage: React.FC = () => {
             sx={{
               padding: 1,
               marginBottom: 1,
-              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
               backgroundColor:
-                msg.sender === "user" ? "lightgrey" : "lightgrey",
-              color: msg.sender === "user" ? "black" : "black",
+                msg.sender === 'user' ? 'lightgrey' : 'lightgrey',
+              color: msg.sender === 'user' ? 'black' : 'black',
               borderRadius: 3,
-              display: "inline-block",
-              maxWidth: "50%",
-              wordWrap: "break-word",
-              position: "relative",
+              display: 'inline-block',
+              maxWidth: '50%',
+              wordWrap: 'break-word',
+              position: 'relative',
             }}
           >
             <Typography
               variant="body1"
               sx={{
-                textAlign: "left",
+                textAlign: 'left',
               }}
             >
               {msg.text}
@@ -285,10 +287,10 @@ const ChatPage: React.FC = () => {
             <Typography
               variant="caption"
               sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                fontSize: "10",
-                color: "grey",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontSize: '10',
+                color: 'grey',
               }}
             >
               {msg.timestamp.toLocaleString()} {/* Format timestamp */}
@@ -296,7 +298,7 @@ const ChatPage: React.FC = () => {
 
             {/* Three dots for delete option */}
             <IconButton
-              sx={{ position: "absolute", top: 5, right: -30 }}
+              sx={{ position: 'absolute', top: 5, right: -30 }}
               onClick={() => handleClickDelete(msg.id)}
             >
               <MoreVertIcon />
@@ -304,16 +306,16 @@ const ChatPage: React.FC = () => {
 
             {/* Delete Option */}
             {deleteOptionsVisible[msg.id] && (
-              <Box sx={{ position: "absolute", top: 35, right: 5 }}>
+              <Box sx={{ position: 'absolute', top: 35, right: 5 }}>
                 <Button
                   onClick={() => handleDeleteMessage(msg.id)}
                   variant="contained"
                   color="error"
                   startIcon={<DeleteIcon />}
                   sx={{
-                    width: "90px",
-                    height: "25px",
-                    fontSize: "11px",
+                    width: '90px',
+                    height: '25px',
+                    fontSize: '11px',
                   }}
                 >
                   Delete
@@ -325,7 +327,7 @@ const ChatPage: React.FC = () => {
       </Box>
 
       {/* Message Input */}
-      <Box sx={{ padding: 2, display: "flex", alignItems: "center" }}>
+      <Box sx={{ padding: 2, display: 'flex', alignItems: 'center' }}>
         <TextField
           fullWidth
           multiline

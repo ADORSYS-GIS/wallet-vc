@@ -1,5 +1,5 @@
-import { Avatar } from "@mui/material";
-import React from "react";
+import { Avatar } from '@mui/material';
+import React from 'react';
 
 const Wallet: React.FC = () => {
   return (
@@ -9,8 +9,8 @@ const Wallet: React.FC = () => {
       sx={{
         width: { xs: 500, sm: 540 },
         height: { xs: 500, sm: 540 },
-        padding: "20px",
-        marginBottom: "15px",
+        padding: '20px',
+        marginBottom: '15px',
       }}
     />
   );

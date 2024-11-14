@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -11,26 +11,26 @@ import {
   DialogTitle,
   IconButton,
   Button,
-} from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Contact,
   ContactEventChannel,
   ContactService,
-} from "@adorsys-gis/contact-service";
-import { eventBus } from "@adorsys-gis/event-bus";
+} from '@adorsys-gis/contact-service';
+import { eventBus } from '@adorsys-gis/event-bus';
 import {
   ServiceResponse,
   ServiceResponseStatus,
-} from "@adorsys-gis/status-service";
-import { MessageService, MessageEventChannel } from "@awambeng/message-service";
+} from '@adorsys-gis/status-service';
+import { MessageService, MessageEventChannel } from '@awambeng/message-service';
 
 const ContactInfoPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
   const navigate = useNavigate();
 
-  const [contactName, setContactName] = useState<string>("");
-  const [contactDID, setContactDID] = useState<string>("");
+  const [contactName, setContactName] = useState<string>('');
+  const [contactDID, setContactDID] = useState<string>('');
   const [contactError, setContactError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -42,7 +42,7 @@ const ContactInfoPage: React.FC = () => {
 
   // Helper function to get initials from the contact's name
   const getInitials = (name: string) => {
-    const words = name.trim().split(" ");
+    const words = name.trim().split(' ');
     return words.length > 1
       ? `${words[0][0].toUpperCase()}${words[1][0].toUpperCase()}`
       : words[0][0].toUpperCase();
@@ -59,10 +59,10 @@ const ContactInfoPage: React.FC = () => {
           response.payload
         ) {
           setContactName(response.payload.name);
-          setContactDID(response.payload.did || "");
+          setContactDID(response.payload.did || '');
           setContactError(null);
         } else {
-          setContactError("Failed to fetch contact details.");
+          setContactError('Failed to fetch contact details.');
         }
       };
 
@@ -73,7 +73,7 @@ const ContactInfoPage: React.FC = () => {
         eventBus.off(getContactChannel, handleContactReceived);
       };
     } else {
-      setContactError("Contact ID is undefined.");
+      setContactError('Contact ID is undefined.');
     }
   }, [contactId, contactService]);
 
@@ -94,7 +94,7 @@ const ContactInfoPage: React.FC = () => {
       contactService.deleteContact(id);
 
       const handleDeleteResponse = (
-        response: ServiceResponse<{ id: number }>
+        response: ServiceResponse<{ id: number }>,
       ) => {
         if (response.status === ServiceResponseStatus.Success) {
           // Delete all messages associated with this contact
@@ -103,17 +103,17 @@ const ContactInfoPage: React.FC = () => {
           // Emit success notification event
           eventBus.emit(
             MessageEventChannel.DeleteAllByContactId,
-            "Contact and messages removed successfully."
+            'Contact and messages removed successfully.',
           );
 
           // Update deleteSuccess to show the success message
-          setDeleteSuccess("Contact and messages removed successfully.");
+          setDeleteSuccess('Contact and messages removed successfully.');
 
           setTimeout(() => {
-            navigate("/contacts");
+            navigate('/contacts');
           }, 2000);
         } else {
-          setDeleteError("Failed to delete contact.");
+          setDeleteError('Failed to delete contact.');
         }
       };
 
@@ -129,23 +129,23 @@ const ContactInfoPage: React.FC = () => {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
-        height: "100vh",
-        maxWidth: { xs: "100%", sm: 600, md: 800 },
-        margin: "0 auto",
-        backgroundColor: "rgba(0, 0, 0, 0.09)",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        height: '100vh',
+        maxWidth: { xs: '100%', sm: 600, md: 800 },
+        margin: '0 auto',
+        backgroundColor: 'rgba(0, 0, 0, 0.09)',
       }}
     >
       {/* Header with Back Button */}
       <Box
         sx={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "flex-start",
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'flex-start',
           marginBottom: 2,
         }}
       >
@@ -161,24 +161,24 @@ const ContactInfoPage: React.FC = () => {
       {/* Circle Avatar with Initials */}
       <Avatar
         sx={{
-          fontWeight: "bold",
+          fontWeight: 'bold',
           width: 100,
           height: 100,
-          bgcolor: "primary.main",
+          bgcolor: 'primary.main',
           marginBottom: 2,
-          fontSize: "2rem",
+          fontSize: '2rem',
         }}
       >
-        {contactName ? getInitials(contactName) : "?"}
+        {contactName ? getInitials(contactName) : '?'}
       </Avatar>
 
       {/* Contact Name */}
-      <Typography variant="h5" sx={{ marginBottom: 1, fontWeight: "bold" }}>
+      <Typography variant="h5" sx={{ marginBottom: 1, fontWeight: 'bold' }}>
         {contactName}
       </Typography>
 
       {/* Contact DID */}
-      <Typography variant="body1" sx={{ marginBottom: 2, fontWeight: "bold" }}>
+      <Typography variant="body1" sx={{ marginBottom: 2, fontWeight: 'bold' }}>
         DID: {contactDID}
       </Typography>
 
@@ -194,10 +194,10 @@ const ContactInfoPage: React.FC = () => {
         variant="body2"
         color="error.main"
         sx={{
-          cursor: "pointer",
-          fontWeight: "bold",
-          marginTop: "auto",
-          marginBottom: "16px",
+          cursor: 'pointer',
+          fontWeight: 'bold',
+          marginTop: 'auto',
+          marginBottom: '16px',
         }}
         onClick={handleDeleteClick}
       >
@@ -235,11 +235,11 @@ const ContactInfoPage: React.FC = () => {
             onClick={handleConfirmDelete}
             variant="contained"
             sx={{
-              border: "1px solid red",
-              backgroundColor: "red",
-              color: "white",
-              padding: "6px 12px",
-              fontSize: "10px",
+              border: '1px solid red',
+              backgroundColor: 'red',
+              color: 'white',
+              padding: '6px 12px',
+              fontSize: '10px',
             }}
           >
             Remove from Wallet
@@ -248,10 +248,10 @@ const ContactInfoPage: React.FC = () => {
             onClick={handleCloseDialog}
             variant="outlined"
             sx={{
-              border: "1px solid black",
-              color: "black",
-              padding: "6px 12px",
-              fontSize: "10px",
+              border: '1px solid black',
+              color: 'black',
+              padding: '6px 12px',
+              fontSize: '10px',
             }}
           >
             Go Back
