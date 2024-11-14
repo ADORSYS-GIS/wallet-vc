@@ -23,7 +23,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint src/** --ext .js,.jsx,.ts,.tsx --no-error-on-unmatched-pattern",
+    "lint:fix": "eslint --fix src/** --ext .js,.jsx,.ts,.tsx --no-error-on-unmatched-pattern"
   },
   "eslintConfig": {
     "extends": [
@@ -53,6 +57,13 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "prettier": "^3.3.3",
     "ts-loader": "^9.5.1"
   }
 }
