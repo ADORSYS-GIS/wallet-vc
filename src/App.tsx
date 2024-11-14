@@ -6,11 +6,11 @@ import BottomNav from './components/BottomNav';
 import MainSection from './components/MainSection';
 import Navbar from './components/Navbar';
 import ActivitiesPage from './pages/ActivitiesPage';
+import ChatPage from './pages/ChatPage';
 import ContactForm from './pages/ContactForm';
+import ContactInfoPage from './pages/ContactInfoPage';
 import ContactsPage from './pages/ContactsPage';
 import SettingsPage from './pages/SettingsPage';
-import ChatPage from './pages/ChatPage';
-import ContactInfoPage from './pages/ContactInfoPage';
 import Wallet from './pages/Wallet';
 
 // Create the theme for the app

@@ -2,10 +2,10 @@ import {
   InstallPWAContextProvider,
   isIosOrSafariDesktop,
 } from '@adorsys-gis/usepwa';
+import { Box } from '@mui/material';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
-import { Box } from '@mui/material';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,

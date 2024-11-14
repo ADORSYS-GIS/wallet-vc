@@ -1,18 +1,3 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Avatar,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  Button,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Contact,
   ContactEventChannel,
@@ -20,10 +5,28 @@ import {
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
 import {
+  MessageEventChannel,
+  MessageService,
+} from '@adorsys-gis/message-service';
+import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
-import { MessageService, MessageEventChannel } from '@awambeng/message-service';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import {
+  Avatar,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const ContactInfoPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();

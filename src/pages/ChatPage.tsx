@@ -1,15 +1,3 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  IconButton,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import InfoIcon from '@mui/icons-material/Info';
 import {
   Contact,
   ContactEventChannel,
@@ -20,12 +8,24 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InfoIcon from '@mui/icons-material/Info';
+import {
+  Box,
+  Button,
+  IconButton,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import {
-  MessageService,
-  MessageEventChannel,
   Message,
-} from '@awambeng/message-service';
+  MessageEventChannel,
+  MessageService,
+} from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { v4 as uuidv4 } from 'uuid';

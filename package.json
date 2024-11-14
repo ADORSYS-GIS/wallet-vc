@@ -4,8 +4,8 @@
   "private": true,
   "dependencies": {
     "@adorsys-gis/contact-service": "^1.0.4",
+    "@adorsys-gis/message-service": "^1.0.1",
     "@adorsys-gis/usepwa": "^1.0.2",
-    "@awambeng/message-service": "^1.0.1",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^6.1.4",
