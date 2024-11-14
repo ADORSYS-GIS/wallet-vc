@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -43,8 +43,9 @@ const ChatPage: React.FC = () => {
     [key: string]: boolean;
   }>({});
 
-  const contactService = new ContactService(eventBus);
-  const messageService = new MessageService(eventBus);
+  // Memoize service creation
+  const contactService = useMemo(() => new ContactService(eventBus), []);
+  const messageService = useMemo(() => new MessageService(eventBus), []);
 
   useEffect(() => {
     const fetchContactDetails = async () => {
@@ -109,224 +110,238 @@ const ChatPage: React.FC = () => {
     };
 
     fetchMessages();
-  }, [contactDID]);
+  }, [contactDID, contactId, messageService]);
 
-    useEffect(() => {
-      
-      // Event listener for when a message is created
-      const handleMessageCreated = (response: ServiceResponse<Message>) => {
-        if (response.status === ServiceResponseStatus.Success && response.payload) {
-          setMessages((prevMessages) => [...prevMessages, response.payload]);
-          setErrorMessage(null);
-        } else {
-          setErrorMessage("Failed to send message.");
-        }
-      };
-
-      // Event listener for when a message is deleted
-      const handleDeleteMessageEvent = (response: ServiceResponse<{ id: string }>) => {
-        if (response.status === ServiceResponseStatus.Success && response.payload) {
-          setMessages((prevMessages) =>
-            prevMessages.filter((msg) => msg.id !== response.payload.id)
-          );
-          setErrorMessage(null);
-        } else {
-          setErrorMessage("Failed to delete message.");
-        }
-      };
-
-      // Add event listeners once when the component mounts
-      eventBus.on(MessageEventChannel.CreateMessage, handleMessageCreated);
-      eventBus.on(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
-
-      // Cleanup event listeners on unmount
-      return () => {
-        eventBus.off(MessageEventChannel.CreateMessage, handleMessageCreated);
-        eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
-      };
-    }, []);
-
-    const handleSendMessage = async () => {
-      if (newMessage.trim() === "") return;
-
-      const message: Message = {
-        id: uuidv4(),
-        text: newMessage,
-        sender: "user",
-        contactId: contactDID,
-        timestamp: new Date(),
-      };
-
-      // Send the message without adding a new event listener
-      messageService.createMessage(message);
-      setNewMessage(""); // Clear the input after sending
+  useEffect(() => {
+    // Event listener for when a message is created
+    const handleMessageCreated = (response: ServiceResponse<Message>) => {
+      if (
+        response.status === ServiceResponseStatus.Success &&
+        response.payload
+      ) {
+        setMessages((prevMessages) => [...prevMessages, response.payload]);
+        setErrorMessage(null);
+      } else {
+        setErrorMessage("Failed to send message.");
+      }
     };
 
-    const handleDeleteMessage = (messageId: string) => {
-      // Delete the message without adding a new event listener
-      messageService.deleteMessage(messageId);
+    // Event listener for when a message is deleted
+    const handleDeleteMessageEvent = (
+      response: ServiceResponse<{ id: string }>
+    ) => {
+      if (
+        response.status === ServiceResponseStatus.Success &&
+        response.payload
+      ) {
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== response.payload.id)
+        );
+        setErrorMessage(null);
+      } else {
+        setErrorMessage("Failed to delete message.");
+      }
     };
 
-    const handleClickDelete = (messageId: string) => {
-      setDeleteOptionsVisible((prev) => ({
-        ...prev,
-        [messageId]: !prev[messageId],
-      }));
+    // Add event listeners once when the component mounts
+    eventBus.on(MessageEventChannel.CreateMessage, handleMessageCreated);
+    eventBus.on(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
+
+    // Cleanup event listeners on unmount
+    return () => {
+      eventBus.off(MessageEventChannel.CreateMessage, handleMessageCreated);
+      eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
+    };
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (newMessage.trim() === "") return;
+
+    const message: Message = {
+      id: uuidv4(),
+      text: newMessage,
+      sender: "user",
+      contactId: contactDID,
+      timestamp: new Date(),
     };
 
-    return (
+    // Send the message without adding a new event listener
+    messageService.createMessage(message);
+    setNewMessage(""); // Clear the input after sending
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    // Delete the message without adding a new event listener
+    messageService.deleteMessage(messageId);
+  };
+
+  const handleClickDelete = (messageId: string) => {
+    setDeleteOptionsVisible((prev) => ({
+      ...prev,
+      [messageId]: !prev[messageId],
+    }));
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100vh",
+        maxWidth: { xs: "100%", sm: 600, md: 800 },
+        margin: "0 auto",
+      }}
+    >
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          height: "100vh",
-          maxWidth: { xs: "100%", sm: 600, md: 800 },
-          margin: "0 auto",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: 2,
+          borderBottom: "5px solid #ccc",
+          position: "relative",
         }}
       >
-        {/* Header */}
+        <IconButton
+          onClick={() => navigate("/contacts")}
+          aria-label="Back"
+          color="primary"
+        >
+          <ArrowBackIcon />
+        </IconButton>
+
+        {/* Centered Title */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 2,
-            borderBottom: "5px solid #ccc",
-            position: "relative",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)", // Centers the title horizontally
           }}
         >
-          <IconButton
-            onClick={() => navigate("/contacts")}
-            aria-label="Back"
-            color="primary"
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "bold", textAlign: "center" }}
           >
-            <ArrowBackIcon />
-          </IconButton>
+            {contactName || "Chat"}
+          </Typography>
+        </Box>
 
-          {/* Centered Title */}
-          <Box
+        {/* Contact Info Button */}
+        <IconButton
+          onClick={() => navigate(`/contact-info/${contactId}`)}
+          aria-label="Contact Info"
+          color="primary"
+        >
+          <InfoIcon />
+        </IconButton>
+      </Box>
+
+      {/* Display error message */}
+      {errorMessage && (
+        <Box sx={{ padding: 2, backgroundColor: "red", color: "white" }}>
+          <Typography variant="body1">{errorMessage}</Typography>
+        </Box>
+      )}
+
+      {/* Messages */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          padding: 2,
+          backgroundColor: "rgba(0, 0, 0, 0.09)",
+          borderRadius: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+        }}
+      >
+        {messages.map((msg) => (
+          <Paper
+            key={msg.id}
             sx={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)", // Centers the title horizontally
+              padding: 1,
+              marginBottom: 1,
+              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              backgroundColor:
+                msg.sender === "user" ? "lightgrey" : "lightgrey",
+              color: msg.sender === "user" ? "black" : "black",
+              borderRadius: 3,
+              display: "inline-block",
+              maxWidth: "50%",
+              wordWrap: "break-word",
+              position: "relative",
             }}
           >
             <Typography
-              variant="h5"
-              sx={{ fontWeight: "bold", textAlign: "center" }}
-            >
-              {contactName || "Chat"}
-            </Typography>
-          </Box>
-
-          {/* Contact Info Button */}
-          <IconButton
-            onClick={() => navigate(`/contact-info/${contactId}`)}
-            aria-label="Contact Info"
-            color="primary"
-          >
-            <InfoIcon />
-          </IconButton>
-        </Box>
-
-        {/* Messages */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            padding: 2,
-            backgroundColor: "rgba(0, 0, 0, 0.09)",
-            borderRadius: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-          }}
-        >
-          {messages.map((msg) => (
-            <Paper
-              key={msg.id}
+              variant="body1"
               sx={{
-                padding: 1,
-                marginBottom: 1,
-                alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
-                backgroundColor:
-                  msg.sender === "user" ? "lightgrey" : "lightgrey",
-                color: msg.sender === "user" ? "black" : "black",
-                borderRadius: 3,
-                display: "inline-block",
-                maxWidth: "50%",
-                wordWrap: "break-word",
-                position: "relative",
+                textAlign: "left",
               }}
             >
-              <Typography
-                variant="body1"
-                sx={{
-                  textAlign: "left",
-                }}
-              >
-                {msg.text}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  fontSize: "10",
-                  color: "grey",
-                }}
-              >
-                {msg.timestamp.toLocaleString()} {/* Format timestamp */}
-              </Typography>
+              {msg.text}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                fontSize: "10",
+                color: "grey",
+              }}
+            >
+              {msg.timestamp.toLocaleString()} {/* Format timestamp */}
+            </Typography>
 
-              {/* Three dots for delete option */}
-              <IconButton
-                sx={{ position: "absolute", top: 5, right: -30 }}
-                onClick={() => handleClickDelete(msg.id)}
-              >
-                <MoreVertIcon />
-              </IconButton>
+            {/* Three dots for delete option */}
+            <IconButton
+              sx={{ position: "absolute", top: 5, right: -30 }}
+              onClick={() => handleClickDelete(msg.id)}
+            >
+              <MoreVertIcon />
+            </IconButton>
 
-              {/* Delete Option */}
-              {deleteOptionsVisible[msg.id] && (
-                <Box sx={{ position: "absolute", top: 35, right: 5 }}>
-                  <Button
-                    onClick={() => handleDeleteMessage(msg.id)}
-                    variant="contained"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    sx={{
-                      width: "90px",
-                      height: "25px",
-                      fontSize: "11px",
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </Box>
-              )}
-            </Paper>
-          ))}
-        </Box>
-
-        {/* Message Input */}
-        <Box sx={{ padding: 2, display: "flex", alignItems: "center" }}>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            maxRows={5}
-            sx={{ flexGrow: 1, marginRight: 1 }}
-          />
-          <Button onClick={handleSendMessage} variant="contained">
-            Send
-          </Button>
-        </Box>
+            {/* Delete Option */}
+            {deleteOptionsVisible[msg.id] && (
+              <Box sx={{ position: "absolute", top: 35, right: 5 }}>
+                <Button
+                  onClick={() => handleDeleteMessage(msg.id)}
+                  variant="contained"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  sx={{
+                    width: "90px",
+                    height: "25px",
+                    fontSize: "11px",
+                  }}
+                >
+                  Delete
+                </Button>
+              </Box>
+            )}
+          </Paper>
+        ))}
       </Box>
-    );
-  };
 
-  export default ChatPage;
+      {/* Message Input */}
+      <Box sx={{ padding: 2, display: "flex", alignItems: "center" }}>
+        <TextField
+          fullWidth
+          multiline
+          variant="outlined"
+          placeholder="Type a message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          maxRows={5}
+          sx={{ flexGrow: 1, marginRight: 1 }}
+        />
+        <Button onClick={handleSendMessage} variant="contained">
+          Send
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+export default ChatPage;

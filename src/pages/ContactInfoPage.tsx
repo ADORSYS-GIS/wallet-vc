@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -23,10 +23,7 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from "@adorsys-gis/status-service";
-import {
-  MessageService,
-  MessageEventChannel,
-} from "@awambeng/message-service";
+import { MessageService, MessageEventChannel } from "@awambeng/message-service";
 
 const ContactInfoPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -37,8 +34,10 @@ const ContactInfoPage: React.FC = () => {
   const [contactError, setContactError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
-  const contactService = new ContactService(eventBus);
+  // Memoize service creation
+  const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = new MessageService(eventBus);
 
   // Helper function to get initials from the contact's name
@@ -76,7 +75,7 @@ const ContactInfoPage: React.FC = () => {
     } else {
       setContactError("Contact ID is undefined.");
     }
-  }, [contactId, contactService, eventBus]);
+  }, [contactId, contactService]);
 
   // Opens delete confirmation dialog
   const handleDeleteClick = () => {
@@ -106,6 +105,9 @@ const ContactInfoPage: React.FC = () => {
             MessageEventChannel.DeleteAllByContactId,
             "Contact and messages removed successfully."
           );
+
+          // Update deleteSuccess to show the success message
+          setDeleteSuccess("Contact and messages removed successfully.");
 
           setTimeout(() => {
             navigate("/contacts");
@@ -206,6 +208,17 @@ const ContactInfoPage: React.FC = () => {
       {deleteError && (
         <Typography variant="body2" color="error.main" sx={{ marginBottom: 2 }}>
           {deleteError}
+        </Typography>
+      )}
+
+      {/* Display delete success message */}
+      {deleteSuccess && (
+        <Typography
+          variant="body2"
+          color="success.main"
+          sx={{ marginBottom: 2 }}
+        >
+          {deleteSuccess}
         </Typography>
       )}
 
