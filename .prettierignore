@@ -1,0 +1,5 @@
+# Add files here to ignore them from prettier formatting
+/dist
+
+# Project-specific paths to ignore
+/public/service-worker.js

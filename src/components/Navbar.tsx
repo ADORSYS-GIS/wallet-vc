@@ -34,12 +34,12 @@ const Navbar: React.FC = () => {
             Wallet-Example
           </Typography>
         </Box>
-        
+
         {/* Add Contact Icon Button */}
-        <IconButton 
-          edge="end" 
-          color="primary" 
-          onClick={handleAddContact} 
+        <IconButton
+          edge="end"
+          color="primary"
+          onClick={handleAddContact}
           sx={{ ml: 2 }}
         >
           <AddIcon />

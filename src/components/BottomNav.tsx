@@ -15,12 +15,7 @@ const BottomNav: React.FC = () => {
         zIndex: 1000,
       }}
     >
-      <NavLink
-        to="/wallet"
-        style={({ isActive }) => ({
-          textDecoration: 'none',
-        })}
-      >
+      <NavLink to="/wallet" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{
@@ -50,12 +45,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink
-        to="/contacts"
-        style={({ isActive }) => ({
-          textDecoration: 'none',
-        })}
-      >
+      <NavLink to="/contacts" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{
@@ -85,12 +75,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink
-        to="/"
-        style={({ isActive }) => ({
-          textDecoration: 'none',
-        })}
-      >
+      <NavLink to="/" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{
@@ -120,12 +105,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink
-        to="/activities"
-        style={({ isActive }) => ({
-          textDecoration: 'none',
-        })}
-      >
+      <NavLink to="/activities" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{
@@ -155,12 +135,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink
-        to="/settings"
-        style={({ isActive }) => ({
-          textDecoration: 'none',
-        })}
-      >
+      <NavLink to="/settings" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{
