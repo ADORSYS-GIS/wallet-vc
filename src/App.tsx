@@ -29,15 +29,11 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      {/* Navbar at the top */}
-      <Navbar />
+      {/* Render Navbar on all pages */}
+      {<Navbar />}
 
       {/* Main content area */}
       <Routes>
-        {/* Routes that don't include Navbar and BottomNav */}
-        <Route path="/chat/:contactId" element={<ChatPage />} />
-        <Route path="/contact-info/:contactId" element={<ContactInfoPage />} />
-
         {/* Routes that include Navbar and BottomNav */}
         <Route
           path="*"
@@ -50,12 +46,17 @@ function App() {
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/ContactForm" element={<ContactForm />} />
+                <Route path="/chat/:contactId" element={<ChatPage />} />
+                <Route
+                  path="/contact-info/:contactId"
+                  element={<ContactInfoPage />}
+                />
               </Routes>
             </MainSection>
           }
         />
       </Routes>
-      {/* Bottom navigation at the bottom */}
+      {/* Render BottomNav on all pages */}
       <BottomNav />
     </ThemeProvider>
   );

@@ -44,11 +44,17 @@ const ContactInfoPage: React.FC = () => {
   const messageService = new MessageService(eventBus);
 
   // Helper function to get initials from the contact's name
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string): string => {
+    if (!name || typeof name !== 'string') {
+      return '?'; // Return a default value for invalid or missing names
+    }
+
     const words = name.trim().split(' ');
-    return words.length > 1
-      ? `${words[0][0].toUpperCase()}${words[1][0].toUpperCase()}`
-      : words[0][0].toUpperCase();
+    if (words.length > 1) {
+      return `${words[0][0]?.toUpperCase() || ''}${words[1][0]?.toUpperCase() || ''}`;
+    }
+
+    return words[0][0]?.toUpperCase() || '?'; // Fallback to '?' if even the first letter is missing
   };
 
   useEffect(() => {
@@ -137,10 +143,9 @@ const ContactInfoPage: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        height: '100vh',
+        height: '98vh',
         maxWidth: { xs: '100%', sm: 600, md: 800 },
         margin: '0 auto',
-        backgroundColor: 'rgba(0, 0, 0, 0.09)',
       }}
     >
       {/* Header with Back Button */}
@@ -200,7 +205,7 @@ const ContactInfoPage: React.FC = () => {
           cursor: 'pointer',
           fontWeight: 'bold',
           marginTop: 'auto',
-          marginBottom: '16px',
+          marginBottom: '30px',
         }}
         onClick={handleDeleteClick}
       >

@@ -92,7 +92,14 @@ const ChatPage: React.FC = () => {
             response.status === ServiceResponseStatus.Success &&
             response.payload
           ) {
-            setMessages(response.payload);
+            // Ensure messages are sorted by a timestamp property
+            const sortedMessages = [...response.payload].sort(
+              (a, b) =>
+                new Date(a.timestamp).getTime() -
+                new Date(b.timestamp).getTime(),
+            );
+
+            setMessages(sortedMessages);
             setErrorMessage(null);
           } else {
             setErrorMessage('Failed to fetch messages.');
@@ -191,6 +198,7 @@ const ChatPage: React.FC = () => {
         height: '100vh',
         maxWidth: { xs: '100%', sm: 600, md: 800 },
         margin: '0 auto',
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
@@ -200,8 +208,12 @@ const ChatPage: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: 2,
-          borderBottom: '5px solid #ccc',
+          borderBottom: '4px solid #ccc',
           position: 'relative',
+          marginTop: '-10px',
+          '@media (max-width: 600px)': {
+            marginTop: '-5px',
+          },
         }}
       >
         <IconButton
@@ -251,12 +263,15 @@ const ChatPage: React.FC = () => {
           flexGrow: 1,
           padding: 2,
           backgroundColor: 'rgba(0, 0, 0, 0.09)',
-          borderRadius: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
-          overflowY: 'auto',
           overflowX: 'hidden',
+          height: 'calc(98vh - 80px)',
+          maxHeight: 'calc(98vh - 80px)',
+          '@media (max-width: 600px)': {
+            height: 'calc(98vh - 120px)', // Reduce height for small screens (e.g., mobile)
+          },
         }}
       >
         {messages.map((msg) => (
@@ -327,7 +342,14 @@ const ChatPage: React.FC = () => {
       </Box>
 
       {/* Message Input */}
-      <Box sx={{ padding: 2, display: 'flex', alignItems: 'center' }}>
+      <Box
+        sx={{
+          padding: 2,
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '10px',
+        }}
+      >
         <TextField
           fullWidth
           multiline

@@ -17,8 +17,14 @@ function TempApp() {
       <Box
         sx={{
           mx: 'auto',
+          position: 'sticky',
           gridTemplateRows: 'auto 1fr auto',
           maxWidth: { xs: '100%', sm: 600, md: 800 },
+          height: '98vh',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
         }}
       >
         {' '}
