@@ -11,19 +11,31 @@ import {
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, IconButton, Paper, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const contactService = new ContactService(eventBus);
 
 const ContactPage: React.FC = () => {
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const openChat = (contactId: number | undefined) => {
+    if (contactId) {
+      navigate(`/chat/${contactId}`);
+      setErrorMessage(null);
+    } else {
+      setErrorMessage('Contact ID is undefined.');
+    }
+  };
 
   useEffect(() => {
     const handleContactsFetched = (response: ServiceResponse<Contact[]>) => {
       if (response.status === ServiceResponseStatus.Success) {
         setContacts(response.payload);
+        setErrorMessage(null);
       } else {
-        setError('Failed to fetch contacts.');
+        setErrorMessage('Failed to fetch contacts.');
       }
     };
 
@@ -41,9 +53,7 @@ const ContactPage: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: 2,
-        width: '100%',
-        maxWidth: 600,
+        padding: 20,
       }}
     >
       <Typography
@@ -52,9 +62,9 @@ const ContactPage: React.FC = () => {
       >
         Contact List
       </Typography>
-      {error && (
+      {errorMessage && (
         <Typography color="error" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
-          {error}
+          {errorMessage}
         </Typography>
       )}
       {contacts.length > 0 ? (
@@ -73,7 +83,13 @@ const ContactPage: React.FC = () => {
               '&:hover': { backgroundColor: '#f1f1f1' },
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+              }}
+            >
               <Typography
                 variant="h6"
                 sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
@@ -89,6 +105,7 @@ const ContactPage: React.FC = () => {
                 aria-label="more-info"
                 size="small"
                 sx={{ color: '#0063F7' }}
+                onClick={() => openChat(contact.id)}
               >
                 <ArrowForwardIcon />
               </IconButton>

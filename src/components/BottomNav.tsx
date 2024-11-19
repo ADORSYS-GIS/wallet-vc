@@ -9,15 +9,12 @@ const BottomNav: React.FC = () => {
       sx={{
         display: 'flex',
         justifyContent: 'space-around',
-        alignItems: 'center',
-        position: 'fixed',
-        bottom: 0,
-        width: '100%',
-        padding: '12px 0',
         backgroundColor: '#ffffff',
         borderTop: '1px solid #E1E1E1',
         boxShadow: '0 -4px 10px rgba(0, 0, 0, 0.1)',
-        zIndex: 1000,
+        position: 'sticky',
+        bottom: 0,
+        width: '100%',
       }}
     >
       <NavLink to="/wallet" style={{ textDecoration: 'none' }}>
