@@ -207,7 +207,7 @@ const ChatPage: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: 2,
+          padding: 1,
           borderBottom: '4px solid #ccc',
           position: 'relative',
           marginTop: '-10px',
@@ -267,11 +267,6 @@ const ChatPage: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'flex-start',
           overflowX: 'hidden',
-          height: 'calc(98vh - 80px)',
-          maxHeight: 'calc(98vh - 80px)',
-          '@media (max-width: 600px)': {
-            height: 'calc(98vh - 120px)', // Reduce height for small screens (e.g., mobile)
-          },
         }}
       >
         {messages.map((msg) => (
@@ -347,7 +342,7 @@ const ChatPage: React.FC = () => {
           padding: 2,
           display: 'flex',
           alignItems: 'center',
-          marginBottom: '10px',
+          marginBottom: '1px',
         }}
       >
         <TextField

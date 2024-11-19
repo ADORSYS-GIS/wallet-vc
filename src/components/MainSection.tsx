@@ -17,9 +17,9 @@ const MainSection: React.FC<MainSectionProps> = ({ children }) => {
         padding: { xs: '20px', sm: '30px' },
         textAlign: 'center',
         boxSizing: 'border-box',
-        overflow: 'auto',
+        overflow: 'hidden',
         flexGrow: 1,
-        height: 'calc(100vh - 150px)',
+        height: 'calc(100vh - 190px)',
         marginTop: '0',
         marginBottom: '0',
       }}

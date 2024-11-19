@@ -146,6 +146,7 @@ const ContactInfoPage: React.FC = () => {
         height: '98vh',
         maxWidth: { xs: '100%', sm: 600, md: 800 },
         margin: '0 auto',
+        overflow: 'hidden',
       }}
     >
       {/* Header with Back Button */}
@@ -154,7 +155,7 @@ const ContactInfoPage: React.FC = () => {
           width: '100%',
           display: 'flex',
           justifyContent: 'flex-start',
-          marginBottom: 2,
+          marginBottom: 1,
         }}
       >
         <IconButton
@@ -173,7 +174,7 @@ const ContactInfoPage: React.FC = () => {
           width: 100,
           height: 100,
           bgcolor: 'primary.main',
-          marginBottom: 2,
+          marginBottom: 1,
           fontSize: '2rem',
         }}
       >

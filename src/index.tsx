@@ -6,12 +6,30 @@ import { Box } from '@mui/material';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
+import { useEffect } from 'react';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
 );
 
 function TempApp() {
+  // Dynamically update --vh for mobile devices
+  useEffect(() => {
+    const handleResize = () => {
+      document.documentElement.style.setProperty(
+        '--vh',
+        `${window.innerHeight * 0.01}px`,
+      );
+    };
+
+    handleResize(); // Initial run
+    window.addEventListener('resize', handleResize); // Update on resize
+
+    return () => {
+      window.removeEventListener('resize', handleResize); // Cleanup listener
+    };
+  }, []);
+
   return (
     <Router>
       <Box
@@ -20,7 +38,7 @@ function TempApp() {
           position: 'sticky',
           gridTemplateRows: 'auto 1fr auto',
           maxWidth: { xs: '100%', sm: 600, md: 800 },
-          height: '98vh',
+          height: { xs: 'calc(var(--vh, 1vh) * 100)', sm: '100%' },
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -31,6 +49,7 @@ function TempApp() {
         {/* Wrapper to limit width */}
         <InstallPWAContextProvider
           component={isIosOrSafariDesktop() ? 'tooltip' : 'banner'}
+          installPromptTimeout={30000}
         >
           <App />
         </InstallPWAContextProvider>
