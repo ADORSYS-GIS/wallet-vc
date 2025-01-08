@@ -10,9 +10,9 @@ import ChatPage from './pages/ChatPage';
 import ContactForm from './pages/ContactForm';
 import ContactInfoPage from './pages/ContactInfoPage';
 import ContactsPage from './pages/ContactsPage';
+import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
-import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
 
 // Create the theme for the app
 const theme = createTheme();

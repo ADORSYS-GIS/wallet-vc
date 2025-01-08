@@ -1,5 +1,5 @@
+import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { Identity } from '../../types/Identity';
 
 interface IdentitySelectorProps {

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
 import { Identity } from '../../types/Identity';
 import IdentitySelector from './IdentitySelector';
 import QRCodeDisplay from './QRCodeDisplay';
