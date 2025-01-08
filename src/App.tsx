@@ -12,6 +12,7 @@ import ContactInfoPage from './pages/ContactInfoPage';
 import ContactsPage from './pages/ContactsPage';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
+import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
 
 // Create the theme for the app
 const theme = createTheme();
@@ -43,6 +44,10 @@ function App() {
                 <Route path="/" element={<MainSection />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/wallet" element={<Wallet />} />
+                <Route
+                  path="/generate-qr-code"
+                  element={<QRCodeGeneratorPage />}
+                />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/ContactForm" element={<ContactForm />} />
