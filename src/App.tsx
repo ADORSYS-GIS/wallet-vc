@@ -10,8 +10,8 @@ import ChatPage from './pages/ChatPage';
 import ContactForm from './pages/ContactForm';
 import ContactInfoPage from './pages/ContactInfoPage';
 import ContactsPage from './pages/ContactsPage';
-import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
 import SettingsPage from './pages/SettingsPage';
+import ShareIdentityPage from './pages/ShareIdentityPage';
 import Wallet from './pages/Wallet';
 
 // Create the theme for the app
@@ -44,10 +44,7 @@ function App() {
                 <Route path="/" element={<MainSection />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/wallet" element={<Wallet />} />
-                <Route
-                  path="/generate-qr-code"
-                  element={<QRCodeGeneratorPage />}
-                />
+                <Route path="/share-identity" element={<ShareIdentityPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/ContactForm" element={<ContactForm />} />

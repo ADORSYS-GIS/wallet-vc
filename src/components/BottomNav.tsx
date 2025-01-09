@@ -1,13 +1,6 @@
 import { Box, IconButton, Typography } from '@mui/material';
 import React from 'react';
-import {
-  FaCog,
-  FaListAlt,
-  FaQrcode,
-  FaUser,
-  FaWallet,
-  FaCamera,
-} from 'react-icons/fa';
+import { FaCamera, FaCog, FaListAlt, FaUser, FaWallet } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -109,36 +102,6 @@ const BottomNav: React.FC = () => {
               }}
             >
               Scan QrCode
-            </Typography>
-          </IconButton>
-        )}
-      </NavLink>
-
-      <NavLink to="/generate-qr-code" style={{ textDecoration: 'none' }}>
-        {({ isActive }) => (
-          <IconButton
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-            }}
-          >
-            <FaQrcode
-              size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
-            />
-            <Typography
-              sx={{
-                fontSize: '12px',
-                marginTop: '5px',
-                fontWeight: 500,
-                color: '#808080',
-              }}
-            >
-              QrCode
             </Typography>
           </IconButton>
         )}
