@@ -9,7 +9,7 @@ import {
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, IconButton, Paper, Typography } from '@mui/material';
+import { Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,7 +53,8 @@ const ContactPage: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: 20,
+        padding: 2,
+        width: '100%',
       }}
     >
       <Typography
@@ -74,7 +75,7 @@ const ContactPage: React.FC = () => {
             sx={{
               padding: 2,
               marginBottom: 2,
-              width: '100%',
+              width: '90%',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -88,6 +89,7 @@ const ContactPage: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
+                overflow: 'hidden',
               }}
             >
               <Typography
@@ -96,9 +98,20 @@ const ContactPage: React.FC = () => {
               >
                 {contact.name}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#8A8A8A' }}>
-                {contact.did}
-              </Typography>
+              <Tooltip title={contact.did} arrow>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#8A8A8A',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '250px', // Limits width for smaller screens
+                  }}
+                >
+                  {contact.did}
+                </Typography>
+              </Tooltip>
             </Box>
             <Box>
               <IconButton

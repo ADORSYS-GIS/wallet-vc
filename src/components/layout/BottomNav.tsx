@@ -1,12 +1,12 @@
 import { Box, IconButton, Typography } from '@mui/material';
 import React from 'react';
 import {
+  FaCamera,
   FaCog,
   FaListAlt,
   FaQrcode,
   FaUser,
   FaWallet,
-  FaCamera,
 } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 
@@ -84,7 +84,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink to="/" style={{ textDecoration: 'none' }}>
+      <NavLink to="/scan" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{

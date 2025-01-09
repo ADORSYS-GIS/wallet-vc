@@ -1,5 +1,5 @@
-import QRCodeGenerator from '../components/qrcodegenerator/QRCodeGenerator';
-import { identities } from '../mock/identities';
+import QRCodeGenerator from '../../components/qrcodegenerator/QRCodeGenerator';
+import { identities } from '../../mock/identities';
 
 export default function QRCodeGeneratorPage() {
   return (

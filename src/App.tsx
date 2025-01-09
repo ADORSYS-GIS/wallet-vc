@@ -2,15 +2,16 @@ import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Route, Routes } from 'react-router-dom';
-import BottomNav from './components/BottomNav';
-import MainSection from './components/MainSection';
-import Navbar from './components/Navbar';
+import BottomNav from './components/layout/BottomNav';
+import MainSection from './components/layout/MainSection';
+import Navbar from './components/layout/Navbar';
+import ScanContact from './components/scan/ScanContact';
 import ActivitiesPage from './pages/ActivitiesPage';
-import ChatPage from './pages/ChatPage';
-import ContactForm from './pages/ContactForm';
-import ContactInfoPage from './pages/ContactInfoPage';
-import ContactsPage from './pages/ContactsPage';
-import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
+import ChatPage from './pages/chat/ChatPage';
+import ContactForm from './pages/contact/ContactForm';
+import ContactInfoPage from './pages/contact/ContactInfoPage';
+import ContactsPage from './pages/contact/ContactsPage';
+import QRCodeGeneratorPage from './pages/qrcodegenerator/QRCodeGeneratorPage';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
 
@@ -56,6 +57,7 @@ function App() {
                   path="/contact-info/:contactId"
                   element={<ContactInfoPage />}
                 />
+                <Route path="/scan" element={<ScanContact />} />
               </Routes>
             </MainSection>
           }

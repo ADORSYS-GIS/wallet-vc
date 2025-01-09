@@ -23,6 +23,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -152,16 +153,20 @@ const ContactInfoPage: React.FC = () => {
       {/* Header with Back Button */}
       <Box
         sx={{
-          width: '100%',
           display: 'flex',
           justifyContent: 'flex-start',
           marginBottom: 1,
+          width: '100%',
         }}
       >
         <IconButton
           onClick={() => navigate(`/chat/${contactId}`)}
           aria-label="Back"
           color="primary"
+          sx={{
+            padding: '8px',
+            color: 'primary.main',
+          }}
         >
           <ArrowBackIcon />
         </IconButton>
@@ -187,9 +192,21 @@ const ContactInfoPage: React.FC = () => {
       </Typography>
 
       {/* Contact DID */}
-      <Typography variant="body1" sx={{ marginBottom: 2, fontWeight: 'bold' }}>
-        DID: {contactDID}
-      </Typography>
+      <Tooltip title={contactDID} arrow>
+        <Typography
+          variant="body1"
+          sx={{
+            marginBottom: 2,
+            fontWeight: 'bold',
+            maxWidth: '80%',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          DID: {contactDID}
+        </Typography>
+      </Tooltip>
 
       {/* Display contact fetch error */}
       {contactError && (

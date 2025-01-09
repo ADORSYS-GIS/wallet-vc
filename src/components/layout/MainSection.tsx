@@ -14,7 +14,6 @@ const MainSection: React.FC<MainSectionProps> = ({ children }) => {
         alignItems: 'center',
         flexDirection: 'column',
         backgroundColor: '#F4F7FC',
-        padding: { xs: '20px', sm: '30px' },
         textAlign: 'center',
         boxSizing: 'border-box',
         overflow: 'hidden',

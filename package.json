@@ -5,10 +5,11 @@
   "dependencies": {
     "@adorsys-gis/contact-service": "^1.0.4",
     "@adorsys-gis/message-service": "^1.0.1",
+    "@adorsys-gis/qr-scanner": "^1.0.2",
     "@adorsys-gis/usepwa": "^1.0.2",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/icons-material": "^6.1.4",
+    "@mui/icons-material": "^6.3.1",
     "@mui/material": "^6.1.4",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.113",
