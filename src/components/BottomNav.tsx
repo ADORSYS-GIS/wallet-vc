@@ -1,6 +1,6 @@
 import { Box, IconButton, Typography } from '@mui/material';
 import React from 'react';
-import { FaCog, FaListAlt, FaQrcode, FaUser, FaWallet } from 'react-icons/fa';
+import { FaCamera, FaCog, FaListAlt, FaUser, FaWallet } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -87,7 +87,7 @@ const BottomNav: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            <FaQrcode
+            <FaCamera
               size={24}
               style={{
                 color: isActive ? '#0063F7' : '#808080',
@@ -101,7 +101,7 @@ const BottomNav: React.FC = () => {
                 color: '#808080',
               }}
             >
-              QR Code
+              Scan QrCode
             </Typography>
           </IconButton>
         )}
