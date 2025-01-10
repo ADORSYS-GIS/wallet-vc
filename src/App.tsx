@@ -11,7 +11,7 @@ import ChatPage from './pages/chat/ChatPage';
 import ContactForm from './pages/contact/ContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
-import QRCodeGeneratorPage from './pages/qrcodegenerator/QRCodeGeneratorPage';
+import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
 
@@ -45,10 +45,7 @@ function App() {
                 <Route path="/" element={<MainSection />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/wallet" element={<Wallet />} />
-                <Route
-                  path="/generate-qr-code"
-                  element={<QRCodeGeneratorPage />}
-                />
+                <Route path="/share-identity" element={<ShareIdentityPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/ContactForm" element={<ContactForm />} />

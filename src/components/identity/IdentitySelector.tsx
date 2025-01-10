@@ -44,11 +44,27 @@ const IdentitySelector: React.FC<IdentitySelectorProps> = ({
           },
         }}
       >
-        <MenuItem value="">
+        <MenuItem>
           <em>None</em>
         </MenuItem>
         {identities.map((identity, index) => (
-          <MenuItem key={index} value={identity.did}>
+          <MenuItem
+            key={index}
+            value={identity.did}
+            sx={{
+              bgcolor: '#FAFAFA',
+              borderRadius: '8px',
+              marginBottom: 1,
+              maxWidth: '700px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              '& .MuiSelect-items': {
+                padding: '12px',
+                width: '500px',
+              },
+            }}
+          >
             {identity.did}
           </MenuItem>
         ))}

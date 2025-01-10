@@ -1,14 +1,14 @@
 import { Box, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { Identity } from '../../types/Identity';
+import QRCodeDisplay from './IdentityQRCodeDisplay';
 import IdentitySelector from './IdentitySelector';
-import QRCodeDisplay from './QRCodeDisplay';
 
-interface QRCodeGeneratorProps {
+interface ShareIdentityProps {
   identities: Identity[];
 }
 
-const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ identities }) => {
+const ShareIdentity: React.FC<ShareIdentityProps> = ({ identities }) => {
   const [selectedDid, setSelectedDid] = useState<string>('');
 
   const handleSelectChange = (did: string) => {
@@ -37,7 +37,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ identities }) => {
           color: '#6C6C6C',
         }}
       >
-        Generate QR Code
+        Share Your Identity via QR Code
       </Typography>
       <IdentitySelector
         identities={identities}
@@ -49,4 +49,4 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ identities }) => {
   );
 };
 
-export default QRCodeGenerator;
+export default ShareIdentity;

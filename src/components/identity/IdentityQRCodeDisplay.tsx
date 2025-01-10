@@ -2,11 +2,13 @@ import { Box, Typography } from '@mui/material';
 import React from 'react';
 import QRCode from 'react-qr-code';
 
-interface QRCodeDisplayProps {
+interface IdentityQRCodeDisplayProps {
   qrCode: string;
 }
 
-const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode }) => {
+const IdentityQRCodeDisplay: React.FC<IdentityQRCodeDisplayProps> = ({
+  qrCode,
+}) => {
   return (
     <Box
       sx={{
@@ -45,11 +47,8 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode }) => {
           fgColor="#000000"
         />
       </Box>
-      <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#CCCCCC' }}>
-        Waiting For Wallet...
-      </Typography>
     </Box>
   );
 };
 
-export default QRCodeDisplay;
+export default IdentityQRCodeDisplay;
