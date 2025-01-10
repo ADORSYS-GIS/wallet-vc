@@ -147,7 +147,7 @@ const ScanContact: React.FC = () => {
             e.preventDefault();
             handleAddContact();
           }}
-          style={{ width: '100%' }}
+          style={{ width: '100%', margin: '20px' }}
         >
           <Box
             display="flex"
@@ -157,6 +157,12 @@ const ScanContact: React.FC = () => {
             height="100vh"
             sx={{ textAlign: 'center' }}
           >
+            <Typography
+              variant="h5"
+              sx={{ marginBottom: '16px', color: '#4A4A4A' }}
+            >
+              Add Contact
+            </Typography>
             {/* Scanned DID in an Input field */}
             <TextField
               label="Scanned DID"
