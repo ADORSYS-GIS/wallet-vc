@@ -1,31 +1,37 @@
-import {
-  ContactEventChannel,
-  ContactService,
-} from '@adorsys-gis/contact-service';
-import { eventBus } from '@adorsys-gis/event-bus';
-import {
-  ServiceResponse,
-  ServiceResponseStatus,
-} from '@adorsys-gis/status-service';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
   CircularProgress,
+  Snackbar,
   TextField,
-  Theme,
   Typography,
   useMediaQuery,
+  Theme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { eventBus } from '@adorsys-gis/event-bus';
+import {
+  ContactService,
+  ContactEventChannel,
+} from '@adorsys-gis/contact-service';
+import {
+  ServiceResponse,
+  ServiceResponseStatus,
+} from '@adorsys-gis/status-service';
 
-// Initialize the ContactService with eventBus
 const contactService = new ContactService(eventBus);
 
 const AddContactForm: React.FC = () => {
+  const location = useLocation();
+  const scannedDid = location.state?.scannedDid || '';
+
   const [name, setName] = useState('');
-  const [did, setDid] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [did, setDid] = useState(scannedDid);
   const [isLoading, setIsLoading] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const push = useNavigate();
 
   const isSmallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('sm'),
@@ -35,29 +41,31 @@ const AddContactForm: React.FC = () => {
     const handleContactCreated = (response: ServiceResponse<void>) => {
       setIsLoading(false);
       if (response.status === ServiceResponseStatus.Success) {
-        setMessage('Contact added successfully!');
+        setMessage('✅ Contact added successfully!');
+        setDid(''); // Cleared instead of null
         setName('');
-        setDid('');
+        setOpenSnackbar(true);
+
+        // Navigate after showing Snackbar
+        setTimeout(() => {
+          push('/contacts');
+        }, 3000);
       } else {
-        setMessage(`Failed to add contact: ${response.payload}`);
+        setMessage(`❗ Failed to add contact: ${response.payload}`);
+        setOpenSnackbar(true);
       }
     };
 
-    // Listen to the CreateContact event on the eventBus
     eventBus.on(ContactEventChannel.CreateContact, handleContactCreated);
 
-    // Cleanup listener on unmount
     return () => {
       eventBus.off(ContactEventChannel.CreateContact, handleContactCreated);
     };
-  }, []);
+  }, [push]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    setMessage(null);
     setIsLoading(true);
-
-    // Call the service to create a new contact
     contactService.createContact({ name, did });
   };
 
@@ -85,6 +93,7 @@ const AddContactForm: React.FC = () => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           sx={{ marginBottom: '16px' }}
+          required
         />
         <TextField
           label="Contact DID"
@@ -92,7 +101,9 @@ const AddContactForm: React.FC = () => {
           fullWidth
           value={did}
           onChange={(e) => setDid(e.target.value)}
+          disabled={!!scannedDid}
           sx={{ marginBottom: '16px' }}
+          required
         />
         <Button
           type="submit"
@@ -117,17 +128,24 @@ const AddContactForm: React.FC = () => {
           )}
         </Button>
       </form>
-      {message && (
-        <Typography
-          sx={{
-            marginTop: '16px',
-            color: message.startsWith('Failed') ? '#E74C3C' : '#27AE60',
-            fontSize: isSmallScreen ? '14px' : '16px',
-          }}
-        >
-          {message}
-        </Typography>
-      )}
+
+      <Snackbar
+        open={openSnackbar}
+        onClose={() => setOpenSnackbar(false)}
+        message={message}
+        autoHideDuration={3000}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        ContentProps={{
+          sx: {
+            backgroundColor: message?.startsWith('✅') ? '#0063F7' : '#FF4D4F',
+            color: 'white',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          },
+        }}
+      />
     </Box>
   );
 };

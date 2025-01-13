@@ -48,7 +48,7 @@ function App() {
                 <Route path="/share-identity" element={<ShareIdentityPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/ContactForm" element={<ContactForm />} />
+                <Route path="/add-contact" element={<ContactForm />} />
                 <Route path="/chat/:contactId" element={<ChatPage />} />
                 <Route
                   path="/contact-info/:contactId"
