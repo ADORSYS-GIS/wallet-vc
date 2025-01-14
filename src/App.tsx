@@ -8,7 +8,7 @@ import Navbar from './components/layout/Navbar';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ChatPage from './pages/chat/ChatPage';
-import ContactForm from './pages/contact/ContactForm';
+import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
 import ShareIdentityPage from './pages/identity/ShareIdentityPage';
@@ -48,7 +48,7 @@ function App() {
                 <Route path="/share-identity" element={<ShareIdentityPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/add-contact" element={<ContactForm />} />
+                <Route path="/add-contact" element={<AddContactForm />} />
                 <Route path="/chat/:contactId" element={<ChatPage />} />
                 <Route
                   path="/contact-info/:contactId"
