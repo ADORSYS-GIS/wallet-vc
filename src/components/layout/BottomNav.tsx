@@ -77,7 +77,7 @@ const BottomNav: React.FC = () => {
         )}
       </NavLink>
 
-      <NavLink to="/" style={{ textDecoration: 'none' }}>
+      <NavLink to="/scan" style={{ textDecoration: 'none' }}>
         {({ isActive }) => (
           <IconButton
             sx={{

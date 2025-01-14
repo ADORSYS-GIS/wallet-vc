@@ -1,16 +1,7 @@
-import AddIcon from '@mui/icons-material/Add';
-import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Toolbar, Typography } from '@mui/material';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
-  const navigate = useNavigate();
-
-  // Function to handle navigation to the ContactForm page
-  const handleAddContact = () => {
-    navigate('/ContactForm');
-  };
-
   return (
     <AppBar
       position="sticky"
@@ -34,16 +25,6 @@ const Navbar: React.FC = () => {
             Wallet-Example
           </Typography>
         </Box>
-
-        {/* Add Contact Icon Button */}
-        <IconButton
-          edge="end"
-          color="primary"
-          onClick={handleAddContact}
-          sx={{ ml: 2 }}
-        >
-          <AddIcon />
-        </IconButton>
       </Toolbar>
     </AppBar>
   );

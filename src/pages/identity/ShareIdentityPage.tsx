@@ -1,5 +1,5 @@
-import ShareIdentity from '../components/identity/ShareIdentity';
-import { identities } from '../mock/identities';
+import ShareIdentity from '../../components/identity/ShareIdentity';
+import { identities } from '../../mock/identities';
 
 export default function ShareIdentityPage() {
   return (

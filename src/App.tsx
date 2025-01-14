@@ -2,16 +2,17 @@ import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Route, Routes } from 'react-router-dom';
-import BottomNav from './components/BottomNav';
-import MainSection from './components/MainSection';
-import Navbar from './components/Navbar';
+import BottomNav from './components/layout/BottomNav';
+import MainSection from './components/layout/MainSection';
+import Navbar from './components/layout/Navbar';
+import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
-import ChatPage from './pages/ChatPage';
-import ContactForm from './pages/ContactForm';
-import ContactInfoPage from './pages/ContactInfoPage';
-import ContactsPage from './pages/ContactsPage';
+import ChatPage from './pages/chat/ChatPage';
+import AddContactForm from './pages/contact/AddContactForm';
+import ContactInfoPage from './pages/contact/ContactInfoPage';
+import ContactsPage from './pages/contact/ContactsPage';
+import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import SettingsPage from './pages/SettingsPage';
-import ShareIdentityPage from './pages/ShareIdentityPage';
 import Wallet from './pages/Wallet';
 
 // Create the theme for the app
@@ -47,12 +48,13 @@ function App() {
                 <Route path="/share-identity" element={<ShareIdentityPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/ContactForm" element={<ContactForm />} />
+                <Route path="/add-contact" element={<AddContactForm />} />
                 <Route path="/chat/:contactId" element={<ChatPage />} />
                 <Route
                   path="/contact-info/:contactId"
                   element={<ContactInfoPage />}
                 />
+                <Route path="/scan" element={<ScanQRCode />} />
               </Routes>
             </MainSection>
           }
