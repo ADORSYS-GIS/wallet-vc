@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  ContactEventChannel,
+  ContactService,
+} from '@adorsys-gis/contact-service';
+import { eventBus } from '@adorsys-gis/event-bus';
+import {
+  ServiceResponse,
+  ServiceResponseStatus,
+} from '@adorsys-gis/status-service';
 import {
   Box,
   Button,
   CircularProgress,
   Snackbar,
   TextField,
+  Theme,
   Typography,
   useMediaQuery,
-  Theme,
 } from '@mui/material';
-import { eventBus } from '@adorsys-gis/event-bus';
-import {
-  ContactService,
-  ContactEventChannel,
-} from '@adorsys-gis/contact-service';
-import {
-  ServiceResponse,
-  ServiceResponseStatus,
-} from '@adorsys-gis/status-service';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const contactService = new ContactService(eventBus);
 
@@ -71,16 +71,12 @@ const AddContactForm: React.FC = () => {
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        backgroundColor: '#F4F7FC',
-        padding: isSmallScreen ? '16px' : '32px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)',
-        margin: '20px auto',
-      }}
+      display="flex"
+      flexDirection="column"
+      gap={2}
+      justifyContent="center"
+      height="100vh"
+      sx={{ textAlign: 'center' }}
     >
       <Typography variant="h5" sx={{ color: '#4A4A4A', marginBottom: '16px' }}>
         Add Contact

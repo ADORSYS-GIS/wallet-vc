@@ -5,7 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
-import ScanContact from './components/scan/ScanContact';
+import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ChatPage from './pages/chat/ChatPage';
 import ContactForm from './pages/contact/ContactForm';
@@ -54,7 +54,7 @@ function App() {
                   path="/contact-info/:contactId"
                   element={<ContactInfoPage />}
                 />
-                <Route path="/scan" element={<ScanContact />} />
+                <Route path="/scan" element={<ScanQRCode />} />
               </Routes>
             </MainSection>
           }
