@@ -1,7 +1,8 @@
 import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
@@ -13,6 +14,7 @@ import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
 import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onbaording-slides/onbaordingslides';
+import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
@@ -22,9 +24,78 @@ const theme = createTheme();
 
 function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
+
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
-  const hasSetPin: boolean = localStorage.getItem('userPin') === 'true';
+
+  const hasSetPin: boolean = localStorage.getItem('userPin') !== null;
+
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    sessionStorage.getItem('isLoggedIn') === 'true',
+  );
+
+  const sessionTimeout = 30 * 60 * 1000;
+
+  // Reset session start time on user interaction
+  useEffect(() => {
+    const resetSessionTimeout = () => {
+      if (isLoggedIn) {
+        sessionStorage.setItem('sessionStart', Date.now().toString());
+      }
+    };
+
+    const events = ['click', 'keypress', 'mousemove', 'scroll', 'touchstart'];
+    events.forEach((event) =>
+      window.addEventListener(event, resetSessionTimeout),
+    );
+
+    return () => {
+      events.forEach((event) =>
+        window.removeEventListener(event, resetSessionTimeout),
+      );
+    };
+  }, [isLoggedIn]);
+
+  // Check session status on load and handle session expiration
+  useEffect(() => {
+    const sessionStart = parseInt(
+      sessionStorage.getItem('sessionStart') || '0',
+      10,
+    );
+    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
+    const currentTime = Date.now();
+
+    if (loggedInState && currentTime - sessionStart < sessionTimeout) {
+      setIsLoggedIn(true);
+    } else {
+      handleLogout();
+    }
+  }, []);
+
+  // Clear session on app closure or refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem('isLoggedIn');
+      sessionStorage.removeItem('sessionStart');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    sessionStorage.setItem('isLoggedIn', 'true');
+    sessionStorage.setItem('sessionStart', Date.now().toString());
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('sessionStart');
+  };
 
   // Know the state of the of the usePWA hook on the app
   console.log({
@@ -39,34 +110,49 @@ function App() {
       <Routes>
         {/* Onboarding route */}
         {!hasCompletedOnboarding && (
-          <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          <Route
+            path="*"
+            element={
+              <OnboardingSlides
+                onComplete={() => {
+                  localStorage.setItem('onboardingComplete', 'true');
+                  window.location.reload(); // Refresh to reflect changes
+                }}
+              />
+            }
+          />
         )}
-        <Route
-          path="/onboarding"
-          element={
-            <OnboardingSlides
-              onComplete={() =>
-                localStorage.setItem('onboardingComplete', 'true')
-              }
-            />
-          }
-        />
 
         {/* PIN setup route */}
         {hasCompletedOnboarding && !hasSetPin && (
-          <Route path="*" element={<Navigate to="/setup-pin" replace />} />
+          <Route
+            path="*"
+            element={
+              <PinSetupPage
+                onComplete={(pin: string) => {
+                  localStorage.setItem('userPin', pin);
+                  window.location.reload(); // Refresh to reflect changes
+                }}
+              />
+            }
+          />
         )}
-        <Route
-          path="/setup-pin"
-          element={
-            <PinSetupPage
-              onComplete={() => localStorage.setItem('userPin', 'true')}
-            />
-          }
-        />
+
+        {/* PIN login route */}
+        {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
+          <Route
+            path="*"
+            element={
+              <PinLoginPage
+                onLogin={handleLogin}
+                requiredPin={localStorage.getItem('userPin') || ''}
+              />
+            }
+          />
+        )}
 
         {/* Main app routes with Navbar and BottomNav */}
-        {hasCompletedOnboarding && hasSetPin && (
+        {hasCompletedOnboarding && hasSetPin && isLoggedIn && (
           <Route
             path="*"
             element={

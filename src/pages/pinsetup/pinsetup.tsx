@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './styles';
+import { TextField, Button, Typography, Container } from '@mui/material';
 
 interface PinSetupPageProps {
-  onComplete: () => void;
+  onComplete: (pin: string) => void;
 }
 
 const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
@@ -11,11 +11,12 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Tempory function on pin storage. Will be changed in the future
   const handleSubmit = () => {
     if (pin.length === 6 && /^\d+$/.test(pin)) {
-      localStorage.setItem('userPin', pin);
-      onComplete();
-      navigate('/wallet');
+      localStorage.setItem('userPin', pin); // Save PIN to localStorage
+      onComplete(pin); // Pass the PIN to onComplete
+      navigate('/wallet'); // Navigate to the wallet page
     } else {
       setError('PIN must be exactly 6 digits');
     }
@@ -30,35 +31,66 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   };
 
   return (
-    <div style={styles.container}>
+    <Container
+      maxWidth="xs"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        overflow: 'hidden',
+      }}
+    >
       {/* Logo */}
-      <img
-        src="/assets/logo.png" // Update the path to your logo image
-        alt="Logo"
-        style={styles.logo}
-      />
+      <img src="/assets/logo.png" alt="Logo" style={{ marginBottom: '10px' }} />
 
       {/* Header */}
-      <h2 style={styles.header}>Set Your PIN for Registration</h2>
+      <Typography
+        variant="h5"
+        style={{ marginBottom: '20px', fontWeight: 'bold' }}
+      >
+        Set Your PIN for Registration
+      </Typography>
 
       {/* PIN Input */}
-      <input
+      <TextField
         type="password"
-        maxLength={6}
         value={pin}
         onChange={handleInputChange}
         placeholder="Enter 6-digit PIN"
-        aria-label="Enter your 6-digit PIN"
-        style={styles.input}
-        autoFocus
+        variant="outlined"
+        fullWidth
+        error={!!error}
+        helperText={error}
+        style={{
+          marginBottom: '20px',
+        }}
+        slotProps={{
+          htmlInput: {
+            maxLength: 6,
+            style: {
+              textAlign: 'center',
+            },
+          },
+        }}
       />
 
-      {error && <p style={styles.error}>{error}</p>}
-
-      <button onClick={handleSubmit} style={styles.submitButton}>
+      {/* Submit Button */}
+      <Button
+        onClick={handleSubmit}
+        variant="contained"
+        color="primary"
+        fullWidth
+        style={{
+          padding: '10px 20px',
+          fontSize: '16px',
+          borderRadius: '5px',
+        }}
+      >
         Submit
-      </button>
-    </div>
+      </Button>
+    </Container>
   );
 };
 

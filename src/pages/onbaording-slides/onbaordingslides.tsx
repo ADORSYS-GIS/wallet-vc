@@ -1,8 +1,8 @@
+import { Box, Button, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
-import styles from './styles';
 
 interface Slide {
   image: string;
@@ -81,52 +81,113 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
   });
 
   return (
-    <div style={styles.container} {...handlers}>
-      <div style={styles.slideContent}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%',
+        padding: '10px',
+        textAlign: 'center',
+        overflow: 'hidden',
+      }}
+      {...handlers}
+    >
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          fontFamily: 'Roboto, sans-serif',
+          fontSize: '18px',
+          fontWeight: '500',
+          lineHeight: '1.5',
+          marginBottom: '8px',
+          marginTop: '4px',
+        }}
+      >
         <img
           src={slides[currentSlide].image}
           alt={slides[currentSlide].title}
-          style={styles.image}
+          style={{
+            width: '100%',
+            borderRadius: '10px',
+            transition: 'transform 0.3s ease-in-out',
+          }}
         />
-        <h2 style={styles.h2}>{slides[currentSlide].title}</h2>
-        <p style={styles.p}>{slides[currentSlide].description}</p>
-      </div>
+        <Typography variant="h6" sx={{ marginBottom: '10px' }}>
+          {slides[currentSlide].title}
+        </Typography>
+        <Typography variant="body1" sx={{ marginTop: '4px' }}>
+          {slides[currentSlide].description}
+        </Typography>
+      </Box>
 
       {/* Bottom Content */}
-      <div style={styles.bottomContainer}>
-        <div style={styles.buttonContainer}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: '35px',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '20px',
+          }}
+        >
           {currentSlide > 0 && (
-            <button onClick={goToPreviousSlide} style={styles.backButton}>
+            <Button
+              onClick={goToPreviousSlide}
+              variant="contained"
+              sx={{
+                padding: '10px 20px',
+                backgroundColor: '#ccc',
+                borderRadius: '5px',
+                textTransform: 'none',
+              }}
+            >
               Back
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             onClick={goToNextSlide}
-            style={{
-              ...styles.nextButton,
+            variant="contained"
+            sx={{
+              padding: '10px 20px',
               backgroundColor:
                 currentSlide === slides.length - 1 ? '#007BFF' : '#007BFF',
+              borderRadius: '5px',
+              textTransform: 'none',
             }}
           >
             {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
-          </button>
-        </div>
+          </Button>
+        </Box>
 
         {/* Dot Navigation */}
-        <div style={styles.dotsContainer}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
           {slides.map((_, index) => (
             <span
               key={index}
               style={{
-                ...styles.dot,
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                transition: 'background-color 0.3s',
                 backgroundColor: currentSlide === index ? '#007BFF' : '#ccc',
               }}
               onClick={() => handleDotClick(index)} // Handling dot click
             />
           ))}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
