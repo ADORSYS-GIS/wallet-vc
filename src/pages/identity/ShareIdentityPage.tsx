@@ -1,10 +1,16 @@
+import React, { useState } from 'react';
 import ShareIdentity from '../../components/identity/ShareIdentity';
-import { identities } from '../../mock/identities';
+import DisplayDID from './DisplayDiD';
 
 export default function ShareIdentityPage() {
+  const [did, setDid] = useState<string | null>(null);
+
   return (
     <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}>
-      <ShareIdentity identities={identities} />
+      <DisplayDID
+        onDidRetrieved={(newDid) => setDid(newDid)}
+      />
+      {did && <ShareIdentity identities={[{ did }]} />}
     </div>
   );
 }
