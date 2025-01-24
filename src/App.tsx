@@ -13,7 +13,7 @@ import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
 import ShareIdentityPage from './pages/identity/ShareIdentityPage';
-import OnboardingSlides from './pages/onbaording-slides/onbaordingslides';
+import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
 import SettingsPage from './pages/SettingsPage';
