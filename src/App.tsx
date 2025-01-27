@@ -8,6 +8,7 @@ import Navbar from './components/layout/Navbar';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ChatPage from './pages/chat/ChatPage';
+import Messages from './components/Messages/Messages';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/add-contact" element={<AddContactForm />} />
                 <Route path="/chat/:contactId" element={<ChatPage />} />
+                <Route path="/messages" element={<Messages />} />
                 <Route
                   path="/contact-info/:contactId"
                   element={<ContactInfoPage />}

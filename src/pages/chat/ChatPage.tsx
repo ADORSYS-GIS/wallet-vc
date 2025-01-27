@@ -161,13 +161,14 @@ const ChatPage: React.FC = () => {
     };
   }, []);
 
+  // This should contain the logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
 
     const message: Message = {
       id: uuidv4(),
       text: newMessage,
-      sender: 'user',
+      sender: 'user', // sender identification
       contactId: contactDID,
       timestamp: new Date(),
     };
@@ -217,7 +218,7 @@ const ChatPage: React.FC = () => {
         }}
       >
         <IconButton
-          onClick={() => navigate('/contacts')}
+          onClick={() => navigate('/messages')}
           aria-label="Back"
           color="primary"
         >
