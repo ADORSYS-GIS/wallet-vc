@@ -429,9 +429,9 @@ const ChatPage: React.FC = () => {
             position: 'absolute',
             top: '50%',
             left: '50%',
-            width: '60%',
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' }, // Adjust for different screen sizes
             transform: 'translate(-50%, -50%)',
-            bgcolor: 'rgba(255, 255, 255, 0.3)',
+            bgcolor: 'rgba(255, 255, 255, 255)',
             boxShadow: 24,
             p: 6,
             borderRadius: 2,
