@@ -20,6 +20,7 @@ import {
 const Messages: React.FC = () => {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [, setErrorMessage] = useState<string | null>(null);
   const [lastMessages, setLastMessages] = useState<{ [key: string]: Message }>(
     {},
   );
@@ -27,71 +28,90 @@ const Messages: React.FC = () => {
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
 
+  const openChat = (contactId: number | undefined) => {
+    if (contactId) {
+      navigate(`/chat/${contactId}`);
+      setErrorMessage(null);
+    } else {
+      setErrorMessage('Contact ID is undefined.');
+    }
+  };
+
+  // Fetch contacts on component mount
   useEffect(() => {
-    const fetchContacts = async () => {
-      contactService.getAllContacts();
-
-      const handleContactsReceived = (response: ServiceResponse<Contact[]>) => {
-        if (
-          response.status === ServiceResponseStatus.Success &&
-          response.payload
-        ) {
-          setContacts(response.payload);
-        }
-      };
-
-      const getAllContactsChannel = ContactEventChannel.GetAllContacts;
-      eventBus.on(getAllContactsChannel, handleContactsReceived);
-
-      return () => {
-        eventBus.off(getAllContactsChannel, handleContactsReceived);
-      };
+    const handleContactsReceived = (response: ServiceResponse<Contact[]>) => {
+      if (
+        response.status === ServiceResponseStatus.Success &&
+        response.payload
+      ) {
+        setContacts(response.payload);
+      }
     };
 
-    fetchContacts();
+    const getAllContactsChannel = ContactEventChannel.GetAllContacts;
+    eventBus.on(getAllContactsChannel, handleContactsReceived);
+
+    contactService.getAllContacts();
+
+    return () => {
+      eventBus.off(getAllContactsChannel, handleContactsReceived);
+    };
   }, [contactService]);
 
+  // Fetch last messages for contacts and update dynamically
   useEffect(() => {
-    const fetchLastMessages = async () => {
-      contacts.forEach((contact) => {
-        messageService.getAllMessagesByContact(contact.did);
-
-        const handleMessagesReceived = (
-          response: ServiceResponse<Message[]>,
-        ) => {
-          if (
-            response.status === ServiceResponseStatus.Success &&
-            response.payload
-          ) {
-            const lastMessage = response.payload.sort(
-              (a, b) =>
-                new Date(b.timestamp).getTime() -
-                new Date(a.timestamp).getTime(),
-            )[0];
-            setLastMessages((prev) => ({
-              ...prev,
-              [contact.did]: lastMessage,
-            }));
-          }
-        };
-
-        const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
-        eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
-
-        return () => {
-          eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
-        };
-      });
+    const handleMessagesReceived = (response: ServiceResponse<Message[]>) => {
+      if (
+        response.status === ServiceResponseStatus.Success &&
+        response.payload
+      ) {
+        response.payload.forEach((message) => {
+          const contactDid = message.contactId;
+          setLastMessages((prev) => ({
+            ...prev,
+            [contactDid]: message, // Update last message for the contact
+          }));
+        });
+      }
     };
 
-    if (contacts.length > 0) {
-      fetchLastMessages();
-    }
+    const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
+    eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
+
+    contacts.forEach((contact) => {
+      messageService.getAllMessagesByContact(contact.did); // Fetch messages for each contact
+    });
+
+    return () => {
+      eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
+    };
   }, [contacts, messageService]);
 
-  const handleChatOpen = (contactId: number) => {
-    navigate(`/chat/${contactId}`);
-  };
+  // Sort contacts by the timestamp of the most recent message
+  const sortedContacts = [...contacts]
+    .filter((contact) => lastMessages[contact.did]) // Only show contacts with messages
+    .sort((a, b) => {
+      const messageA = lastMessages[a.did];
+      const messageB = lastMessages[b.did];
+      if (!messageA || !messageB) return 0;
+      return (
+        new Date(messageB.timestamp).getTime() -
+        new Date(messageA.timestamp).getTime()
+      );
+    });
+
+  // Polling mechanism to update the last messages every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      contacts.forEach((contact) => {
+        messageService.getAllMessagesByContact(contact.did); // Trigger update for each contact
+      });
+    }, 1000); // 1 second interval
+
+    return () => {
+      clearInterval(interval); // Clean up the interval on component unmount
+    };
+  }, [contacts, messageService]);
 
   return (
     <Box
@@ -104,76 +124,80 @@ const Messages: React.FC = () => {
         overflow: 'auto',
       }}
     >
-      {contacts.map((contact) => (
-        <Paper
-          key={contact.id}
-          onClick={() => handleChatOpen(contact.id!)}
-          sx={{
-            padding: 2,
-            marginBottom: 2,
-            width: '90%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderRadius: 2,
-            boxShadow: 2,
-            cursor: 'pointer',
-            '&:hover': { backgroundColor: '#f1f1f1' },
-          }}
-        >
-          <Box
+      {sortedContacts.map((contact) => {
+        const message = lastMessages[contact.did]; // Get the most recent message for the contact
+
+        return (
+          <Paper
+            key={contact.id}
+            onClick={() => openChat(contact.id)}
             sx={{
+              padding: 2,
+              marginBottom: 2,
+              width: '90%',
               display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              overflow: 'hidden',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderRadius: 2,
+              boxShadow: 2,
+              cursor: 'pointer',
+              '&:hover': { backgroundColor: '#f1f1f1' },
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                overflow: 'hidden',
+              }}
             >
-              {contact.name}
-            </Typography>
-            <Tooltip title={contact.did} arrow>
+              <Typography
+                variant="h6"
+                sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
+              >
+                {contact.name}
+              </Typography>
+              <Tooltip title={contact.did} arrow>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#8A8A8A',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '250px',
+                  }}
+                >
+                  {contact.did}
+                </Typography>
+              </Tooltip>
+              {message && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#4A4A4A',
+                    marginTop: '4px',
+                  }}
+                >
+                  {message.text}
+                </Typography>
+              )}
+            </Box>
+            {message && (
               <Typography
                 variant="body2"
                 sx={{
                   color: '#8A8A8A',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '250px',
+                  marginLeft: '16px',
                 }}
               >
-                {contact.did}
-              </Typography>
-            </Tooltip>
-            {lastMessages[contact.did] && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#4A4A4A',
-                  marginTop: '4px',
-                }}
-              >
-                {lastMessages[contact.did].text}
+                {new Date(message.timestamp).toLocaleString()}
               </Typography>
             )}
-          </Box>
-          {lastMessages[contact.did] && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#8A8A8A',
-                marginLeft: '16px',
-              }}
-            >
-              {new Date(lastMessages[contact.did].timestamp).toLocaleString()}
-            </Typography>
-          )}
-        </Paper>
-      ))}
+          </Paper>
+        );
+      })}
     </Box>
   );
 };
