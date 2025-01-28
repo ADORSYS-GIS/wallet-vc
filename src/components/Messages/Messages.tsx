@@ -1,26 +1,25 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Tooltip, Paper } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import {
   Contact,
-  ContactService,
   ContactEventChannel,
+  ContactService,
 } from '@adorsys-gis/contact-service';
+import { eventBus } from '@adorsys-gis/event-bus';
 import {
   Message,
-  MessageService,
   MessageEventChannel,
+  MessageService,
 } from '@adorsys-gis/message-service';
-import { eventBus } from '@adorsys-gis/event-bus';
 import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
+import { Box, Paper, Tooltip, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Messages: React.FC = () => {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [, setErrorMessage] = useState<string | null>(null);
   const [lastMessages, setLastMessages] = useState<{ [key: string]: Message }>(
     {},
   );
@@ -31,9 +30,6 @@ const Messages: React.FC = () => {
   const openChat = (contactId: number | undefined) => {
     if (contactId) {
       navigate(`/chat/${contactId}`);
-      setErrorMessage(null);
-    } else {
-      setErrorMessage('Contact ID is undefined.');
     }
   };
 
@@ -58,19 +54,32 @@ const Messages: React.FC = () => {
     };
   }, [contactService]);
 
-  // Fetch last messages for contacts and update dynamically
+  // Fetch and update messages dynamically
+  const fetchMessages = useCallback(() => {
+    contacts.forEach((contact) => {
+      messageService.getAllMessagesByContact(contact.did);
+    });
+  }, [contacts, messageService]);
+
   useEffect(() => {
     const handleMessagesReceived = (response: ServiceResponse<Message[]>) => {
       if (
         response.status === ServiceResponseStatus.Success &&
         response.payload
       ) {
-        response.payload.forEach((message) => {
-          const contactDid = message.contactId;
-          setLastMessages((prev) => ({
-            ...prev,
-            [contactDid]: message, // Update last message for the contact
-          }));
+        setLastMessages((prev) => {
+          const updatedMessages = { ...prev };
+          response.payload.forEach((message) => {
+            const contactDid = message.contactId;
+            if (
+              !updatedMessages[contactDid] ||
+              new Date(message.timestamp) >
+                new Date(updatedMessages[contactDid]?.timestamp)
+            ) {
+              updatedMessages[contactDid] = message; // Update to the latest message
+            }
+          });
+          return updatedMessages;
         });
       }
     };
@@ -78,40 +87,35 @@ const Messages: React.FC = () => {
     const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
     eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
 
-    contacts.forEach((contact) => {
-      messageService.getAllMessagesByContact(contact.did); // Fetch messages for each contact
-    });
+    fetchMessages();
 
     return () => {
       eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
     };
-  }, [contacts, messageService]);
+  }, [contacts, fetchMessages]);
 
-  // Sort contacts by the timestamp of the most recent message
-  const sortedContacts = [...contacts]
-    .filter((contact) => lastMessages[contact.did]) // Only show contacts with messages
-    .sort((a, b) => {
-      const messageA = lastMessages[a.did];
-      const messageB = lastMessages[b.did];
-      if (!messageA || !messageB) return 0;
-      return (
-        new Date(messageB.timestamp).getTime() -
-        new Date(messageA.timestamp).getTime()
-      );
-    });
-
-  // Polling mechanism to update the last messages every second
+  // Polling mechanism with debounce
   useEffect(() => {
-    const interval = setInterval(() => {
-      contacts.forEach((contact) => {
-        messageService.getAllMessagesByContact(contact.did); // Trigger update for each contact
-      });
-    }, 1000); // 1 second interval
+    const interval = setInterval(fetchMessages, 1000); // Fetch every second
 
-    return () => {
-      clearInterval(interval); // Clean up the interval on component unmount
-    };
-  }, [contacts, messageService]);
+    return () => clearInterval(interval);
+  }, [fetchMessages]);
+
+  // Sort contacts by most recent message
+  const sortedContacts = useMemo(
+    () =>
+      [...contacts]
+        .filter((contact) => lastMessages[contact.did]) // Only show contacts with messages
+        .sort((a, b) => {
+          const messageA = lastMessages[a.did];
+          const messageB = lastMessages[b.did];
+          return (
+            new Date(messageB.timestamp).getTime() -
+            new Date(messageA.timestamp).getTime()
+          );
+        }),
+    [contacts, lastMessages],
+  );
 
   return (
     <Box
@@ -124,8 +128,15 @@ const Messages: React.FC = () => {
         overflow: 'auto',
       }}
     >
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 'bold', color: '#075E54', marginBottom: 2 }}
+      >
+        Messages
+      </Typography>
+
       {sortedContacts.map((contact) => {
-        const message = lastMessages[contact.did]; // Get the most recent message for the contact
+        const message = lastMessages[contact.did];
 
         return (
           <Paper
