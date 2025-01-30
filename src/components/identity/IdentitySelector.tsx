@@ -4,7 +4,7 @@ import { Identity } from '../../types/Identity';
 
 interface IdentitySelectorProps {
   identities: Identity[];
-  selectedDid: string;
+  selectedDid: string | null;
   onChange: (did: string) => void;
 }
 
@@ -33,13 +33,15 @@ const IdentitySelector: React.FC<IdentitySelectorProps> = ({
     >
       <InputLabel>Select DID</InputLabel>
       <Select
-        value={selectedDid}
+        value={selectedDid || ''} // Fallback to empty string when null
         onChange={(event) => onChange(event.target.value)}
         displayEmpty
         sx={{
           bgcolor: '#FAFAFA',
           borderRadius: '8px',
           '& .MuiSelect-select': {
+            display: 'flex',
+            justifyContent: 'space-between',
             padding: '12px',
           },
         }}
@@ -56,16 +58,23 @@ const IdentitySelector: React.FC<IdentitySelectorProps> = ({
               borderRadius: '8px',
               marginBottom: 1,
               maxWidth: '700px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              '& .MuiSelect-items': {
-                padding: '12px',
-                width: '500px',
-              },
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '12px',
             }}
           >
-            {identity.did}
+            {/* Truncate the DID to fit within available space */}
+            <span
+              style={{
+                display: 'block',
+                width: '100%',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {identity.did}
+            </span>
           </MenuItem>
         ))}
       </Select>
