@@ -14,6 +14,9 @@ import {
   Box,
   Button,
   IconButton,
+  Menu,
+  MenuItem,
+  Modal,
   Paper,
   TextField,
   Typography,
@@ -36,6 +39,14 @@ const ChatPage: React.FC = () => {
 
   const [contactName, setContactName] = useState<string>('');
   const [contactDID, setContactDID] = useState<string>('');
+  const [userDID, setUserDID] = useState<string>(''); // State to store user DID
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedDID, setSelectedDID] = useState<string | null>(
+    localStorage.getItem('selectedDID') || null,
+  ); // The DID to use for sending
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleOpenModal = () => setIsModalOpen(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -161,13 +172,19 @@ const ChatPage: React.FC = () => {
     };
   }, []);
 
+  // This should contain the logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
+
+    if (!selectedDID) {
+      setIsModalOpen(true); // Open modal to get the user's DID
+      return;
+    }
 
     const message: Message = {
       id: uuidv4(),
       text: newMessage,
-      sender: 'user',
+      sender: selectedDID, // sender identification
       contactId: contactDID,
       timestamp: new Date(),
     };
@@ -175,6 +192,16 @@ const ChatPage: React.FC = () => {
     // Send the message without adding a new event listener
     messageService.createMessage(message);
     setNewMessage(''); // Clear the input after sending
+  };
+
+  // Handle modal submission
+  const handleModalSubmit = () => {
+    if (userDID.trim() !== '') {
+      setSelectedDID(userDID);
+      localStorage.setItem('selectedDID', userDID);
+      setUserDID('');
+      setIsModalOpen(false);
+    }
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -217,7 +244,7 @@ const ChatPage: React.FC = () => {
         }}
       >
         <IconButton
-          onClick={() => navigate('/contacts')}
+          onClick={() => navigate('/messages')}
           aria-label="Back"
           color="primary"
         >
@@ -240,14 +267,48 @@ const ChatPage: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Contact Info Button */}
-        <IconButton
-          onClick={() => navigate(`/contact-info/${contactId}`)}
-          aria-label="Contact Info"
-          color="primary"
-        >
-          <InfoIcon />
-        </IconButton>
+        {/* Contact Info Dropdown */}
+        <Box>
+          <IconButton
+            onClick={(event) => setAnchorEl(event.currentTarget)} // Open dropdown
+            aria-label="Contact Info"
+            color="primary"
+          >
+            <InfoIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            {/* Navigate to Contact Info */}
+            <MenuItem
+              onClick={() => {
+                navigate(`/contact-info/${contactId}`);
+                setAnchorEl(null); // Close dropdown
+              }}
+            >
+              View Contact Info
+            </MenuItem>
+            {/* Open Modal for Setting DID */}
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null); // Close dropdown
+                handleOpenModal(); // Open the modal
+              }}
+            >
+              Set/Change Sending DID
+            </MenuItem>
+          </Menu>
+        </Box>
       </Box>
 
       {/* Display error message */}
@@ -275,10 +336,11 @@ const ChatPage: React.FC = () => {
             sx={{
               padding: 1,
               marginBottom: 1,
-              alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+              alignSelf:
+                msg.contactId === contactDID ? 'flex-end' : 'flex-start',
               backgroundColor:
-                msg.sender === 'user' ? 'lightgrey' : 'lightgrey',
-              color: msg.sender === 'user' ? 'black' : 'black',
+                msg.contactId === contactDID ? 'lightgrey' : 'lightgrey',
+              color: msg.contactId === contactDID ? 'black' : 'white',
               borderRadius: 3,
               display: 'inline-block',
               maxWidth: '50%',
@@ -359,6 +421,49 @@ const ChatPage: React.FC = () => {
           Send
         </Button>
       </Box>
+
+      {/* Modal for selecting DID */}
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' }, // Adjust for different screen sizes
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'rgba(255, 255, 255, 255)',
+            boxShadow: 24,
+            p: 6,
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Set sending DID
+          </Typography>
+          <TextField
+            value={userDID}
+            onChange={(e) => setUserDID(e.target.value)}
+            fullWidth
+            placeholder="Paste your DID here..."
+          />
+          <Box mt={2} display="flex" justifyContent="center">
+            <Button
+              variant="outlined"
+              onClick={() => setIsModalOpen(false)}
+              sx={{ marginRight: 1 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleModalSubmit}
+              disabled={!userDID.trim()} // Disable button if no DID is entered
+            >
+              OK
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 };

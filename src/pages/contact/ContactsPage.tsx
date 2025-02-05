@@ -55,6 +55,7 @@ const ContactPage: React.FC = () => {
         alignItems: 'center',
         padding: 2,
         width: '100%',
+        overflow: 'auto',
       }}
     >
       <Typography

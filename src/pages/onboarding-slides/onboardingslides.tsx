@@ -69,10 +69,6 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
     navigate('/setup-pin');
   };
 
-  const handleDotClick = (index: number) => {
-    setCurrentSlide(index);
-  };
-
   // Swipeable hook for swipe gestures
   const handlers = useSwipeable({
     onSwipedLeft: () => goToNextSlide(),
@@ -168,23 +164,6 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
           >
             {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
           </Button>
-        </Box>
-
-        {/* Dot Navigation */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-          {slides.map((_, index) => (
-            <span
-              key={index}
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                transition: 'background-color 0.3s',
-                backgroundColor: currentSlide === index ? '#007BFF' : '#ccc',
-              }}
-              onClick={() => handleDotClick(index)} // Handling dot click
-            />
-          ))}
         </Box>
       </Box>
     </Box>
