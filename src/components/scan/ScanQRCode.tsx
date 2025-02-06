@@ -20,45 +20,50 @@ interface ScanQRCodeProps {
   onBack?: () => void;
 }
 
+interface ProcessMediatorOOBResult {
+  status: string; // "true" for success or "false" for error
+  message: string;
+}
+
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const push = useNavigate();
-
+  const navigate = useNavigate();
   const isSmallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('sm'),
   );
 
   const handleScan = async (data: string) => {
     setError(null);
+    setIsLoading(true);
 
     try {
-      const eventBus = new EventEmitter();
-      const securityService = new SecurityService();
-      const didservice = new DidService(eventBus, securityService);
-
       if (data.includes('_oob=')) {
         const url = new URL(data);
-        const oobEncoded = url.searchParams.get('oob');
+        const oobEncoded = url.searchParams.get('_oob');
         if (!oobEncoded) {
           throw new Error('Invalid OOB invitation. Missing encoded payload.');
         }
 
-        const decodedOob = JSON.parse(
-          Buffer.from(oobEncoded, 'base64').toString('utf8'),
-        );
+        const credentialOffer = data;
+        const eventBus = new EventEmitter();
+        const securityService = new SecurityService();
+        const didService = new DidService(eventBus, securityService);
 
-        const result = await didservice.processMediatorOOB(
-          JSON.stringify(decodedOob),
-        );
+        const rawResult = await didService.processMediatorOOB(credentialOffer);
+        const result = rawResult as ProcessMediatorOOBResult;
 
-        if (onScanSuccess) {
-          onScanSuccess(JSON.stringify(decodedOob));
+        if (result.status === 'true') {
+          if (onScanSuccess) {
+            onScanSuccess(credentialOffer);
+          } else {
+            navigate('/success', { state: { result } });
+          }
         } else {
-          push('/sucess', { state: { result } });
+          setError(result.message || 'Unknown error from backend');
         }
       } else if (data.startsWith('did:peer:')) {
-        push('/add-contact', { state: { scannedDid: data } });
+        navigate('/add-contact', { state: { scannedDid: data } });
       } else {
         setError('Unrecognized QR code format.');
       }
@@ -78,7 +83,7 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
       <Tooltip arrow title="Back">
         <IconButton
           size="small"
-          onClick={onBack || (() => push('/'))}
+          onClick={onBack || (() => navigate('/'))}
           sx={{
             position: 'absolute',
             top: isSmallScreen ? 70 : 110,
@@ -102,8 +107,13 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
       )}
 
       <QrScanner
-        onResult={handleScan}
+        facingMode="environment"
+        scanDelay={500}
+        onResult={(result: string) => {
+          handleScan(result);
+        }}
         onError={(err: unknown) => {
+          console.error('QR Scanner encountered an error:', err);
           setIsLoading(false);
           setError(
             err instanceof Error ? err.message : 'An unknown error occurred.',

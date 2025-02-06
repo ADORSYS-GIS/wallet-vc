@@ -19,6 +19,7 @@ import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
 import SettingsPage from './pages/SettingsPage';
 import Wallet from './pages/Wallet';
+import SuccessPage from './pages/SuccessPage';
 
 // Create the theme for the app
 const theme = createTheme();
@@ -178,6 +179,7 @@ function App() {
                       element={<ContactInfoPage />}
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
+                    <Route path="/Success" element={<SuccessPage />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />
