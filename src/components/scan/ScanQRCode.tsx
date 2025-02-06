@@ -57,6 +57,8 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
         } else {
           push('/sucess', { state: { result } });
         }
+      } else if (data.startsWith('did:peer:')) {
+        push('/add-contact', { state: { scannedDid: data } });
       } else {
         setError('Unrecognized QR code format.');
       }
