@@ -18,42 +18,31 @@ export default function ShareIdentityPage() {
   const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
   useEffect(() => {
-    const handleDIDResponse = (eventData: {
+    const handleDIDResponse = ({
+      status,
+      payload,
+    }: {
       status: ServiceResponseStatus;
       payload: { did: string }[];
     }) => {
-      const { status, payload } = eventData;
-
       if (status === ServiceResponseStatus.Success) {
-        const didList: Identity[] = payload.map((record) => ({
-          did: record.did,
-        }));
-        setDids(didList);
+        setDids(payload.map((record) => ({ did: record.did })));
         setErrorMessage(null);
       } else {
-        const errorMessage =
-          payload.length > 0
-            ? 'An error occurred while fetching DIDs'
-            : 'Unknown error';
-        setErrorMessage(`Error: ${errorMessage}`);
+        setErrorMessage('An error occurred while fetching DIDs');
       }
     };
 
-    const fetchDID = () => {
-      didIdentityService.findAllDidIdentities(); // Trigger the service to fetch DIDs
-    };
+    eventBus.on(DidEventChannel.GetPeerContactDidIdentities, handleDIDResponse);
+    didIdentityService.findPeerContactDidIdentities();
 
-    // Register event listener
-    eventBus.on(DidEventChannel.GetAllDidIdentities, handleDIDResponse);
-
-    fetchDID(); // Fetch DIDs when the component mounts
-
-    // Cleanup listener on component unmount
     return () => {
-      eventBus.off(DidEventChannel.GetAllDidIdentities, handleDIDResponse);
+      eventBus.off(
+        DidEventChannel.GetPeerContactDidIdentities,
+        handleDIDResponse,
+      );
     };
   }, []);
-
   const handleDidSelect = (selectedDid: string) => {
     setSelectedDid(selectedDid);
   };
