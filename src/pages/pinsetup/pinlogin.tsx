@@ -1,4 +1,12 @@
-import { Avatar, Box, Button, TextField, Typography } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  IconButton,
+  TextField,
+  Typography,
+} from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,13 +21,14 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
 }) => {
   const [inputPin, setInputPin] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showPin, setShowPin] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = () => {
     if (inputPin === requiredPin) {
       setError(null);
       onLogin();
-      navigate('/wallet');
+      navigate('/');
     } else {
       setError('Invalid PIN. Please try again.');
     }
@@ -35,91 +44,99 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
 
   return (
     <Box
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="90vh"
+      padding={3}
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
         backgroundColor: '#F4F7FC',
         textAlign: 'center',
-        padding: '20px',
-        boxSizing: 'border-box',
       }}
     >
-      {/* Logo Image */}
-      <Avatar
-        alt="Secure Login"
-        src="/assets/security.png"
+      <Box
         sx={{
-          width: { xs: 250, sm: 300, md: 350 },
-          height: { xs: 250, sm: 300, md: 350 },
-          marginTop: '-40px',
-        }}
-      />
-
-      {/* Title */}
-      <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
-        Unlock Your Wallet
-      </Typography>
-
-      {/* Description */}
-      <Typography
-        variant="body1"
-        sx={{
-          color: '#555',
-          maxWidth: '80%',
-          lineHeight: 1.5,
-          marginBottom: '15px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '400px',
+          padding: '32px',
         }}
       >
-        Enter your 6-digit PIN to access your wallet securely.
-      </Typography>
+        {/* Logo Image */}
+        <Avatar
+          alt="Secure Login"
+          src="/assets/security.png"
+          sx={{ width: 100, height: 100, marginBottom: 2 }}
+        />
 
-      {/* PIN Input Field */}
-      <TextField
-        type="password"
-        value={inputPin}
-        onChange={handleInputChange}
-        placeholder="Enter PIN"
-        variant="outlined"
-        fullWidth
-        error={!!error}
-        helperText={error || ' '}
-        slotProps={{
-          htmlInput: {
-            maxLength: 6,
-            style: {
-              textAlign: 'center',
-              fontSize: '20px',
-              letterSpacing: '3px',
+        {/* Title */}
+        <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: 5 }}>
+          Unlock Your Wallet
+        </Typography>
+
+        {/* Description */}
+        <Typography
+          variant="body1"
+          sx={{
+            color: '#555',
+            maxWidth: '80%',
+            lineHeight: 1.5,
+            marginBottom: 3,
+          }}
+        >
+          Enter your 6-digit PIN to access your wallet securely.
+        </Typography>
+
+        {/* PIN Input Field */}
+        <TextField
+          fullWidth
+          type={showPin ? 'text' : 'password'}
+          label="Enter PIN"
+          value={inputPin}
+          onChange={handleInputChange}
+          error={!!error}
+          helperText={error || ' '}
+          sx={{ marginBottom: 2 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowPin(!showPin)}
+                  sx={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  {showPin ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              ),
             },
-          },
-        }}
-        sx={{
-          maxWidth: '280px',
-          mb: 3,
-        }}
-      />
+          }}
+        />
 
-      {/* Login Button */}
-      <Button
-        onClick={handleSubmit}
-        variant="contained"
-        fullWidth
-        disabled={inputPin.length !== 6}
-        sx={{
-          padding: '14px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          borderRadius: '8px',
-          textTransform: 'none',
-          maxWidth: '280px',
-          backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
-        }}
-      >
-        Login
-      </Button>
+        {/* Login Button */}
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          fullWidth
+          disabled={inputPin.length !== 6}
+          sx={{
+            padding: '12px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            textTransform: 'none',
+            backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
+          }}
+        >
+          Login
+        </Button>
+      </Box>
     </Box>
   );
 };

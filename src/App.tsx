@@ -2,14 +2,14 @@ import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
+import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ChatPage from './pages/chat/ChatPage';
-import Messages from './components/Messages/Messages';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
@@ -34,6 +34,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     sessionStorage.getItem('isLoggedIn') === 'true',
   );
+
+  const navigate = useNavigate();
 
   const sessionTimeout = 30 * 60 * 1000;
 
@@ -126,30 +128,36 @@ function App() {
 
         {/* PIN setup route */}
         {hasCompletedOnboarding && !hasSetPin && (
-          <Route
-            path="*"
-            element={
-              <PinSetupPage
-                onComplete={(pin: string) => {
-                  localStorage.setItem('userPin', pin);
-                  window.location.reload(); // Refresh to reflect changes
-                }}
-              />
-            }
-          />
+          <>
+            <Route
+              path="/setup-pin"
+              element={
+                <PinSetupPage
+                  onComplete={(pin: string) => {
+                    localStorage.setItem('userPin', pin);
+                    navigate('/login', { replace: true }); // Redirect to login after setting PIN
+                  }}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/setup-pin" />} />
+          </>
         )}
 
         {/* PIN login route */}
         {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
-          <Route
-            path="*"
-            element={
-              <PinLoginPage
-                onLogin={handleLogin}
-                requiredPin={localStorage.getItem('userPin') || ''}
-              />
-            }
-          />
+          <>
+            <Route
+              path="/login"
+              element={
+                <PinLoginPage
+                  onLogin={handleLogin}
+                  requiredPin={localStorage.getItem('userPin') || ''}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
         )}
 
         {/* Main app routes with Navbar and BottomNav */}
