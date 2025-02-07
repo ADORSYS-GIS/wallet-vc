@@ -6,7 +6,6 @@
     "@adorsys-gis/contact-exchange": "^1.0.3",
     "@adorsys-gis/contact-service": "^1.0.4",
     "@adorsys-gis/message-service": "^1.0.1",
-    "@adorsys-gis/multiple-did-identities": "^1.0.5",
     "@adorsys-gis/multiple-did-identities": "^1.0.6",
     "@adorsys-gis/qr-scanner": "^1.0.3",
     "@adorsys-gis/status-service": "^1.0.0",
@@ -39,10 +38,6 @@
     "webpack": "^5.95.0"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
-    "eject": "craco eject",
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",

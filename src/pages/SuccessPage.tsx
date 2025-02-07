@@ -1,8 +1,17 @@
+import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
-const SuccessPage = () => {
-  const resultString = sessionStorage.getItem('result');
-  const result = resultString ? JSON.parse(resultString) : null;
+interface ProcessMediatorOOBResult {
+  status: string;
+  message: string;
+}
+
+const SuccessPage: React.FC = () => {
+  const location = useLocation();
+  const result = (
+    location.state as { result?: ProcessMediatorOOBResult } | null
+  )?.result;
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
@@ -22,7 +31,7 @@ const SuccessPage = () => {
         </>
       ) : (
         <Typography variant="body1" mt={2} color="error">
-          No additional data available.
+          No result data available.
         </Typography>
       )}
     </Box>

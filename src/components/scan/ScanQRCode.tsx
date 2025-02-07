@@ -25,10 +25,6 @@ interface ProcessMediatorOOBResult {
   message: string;
 }
 
-const base64UrlToBase64 = (base64Url: string): string => {
-  return base64Url.replace(/-/g, '+').replace(/_/g, '/');
-};
-
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -45,22 +41,12 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
     try {
       if (data.includes('_oob=')) {
         const credentialOffer = data;
-        const base64UrlPart = data.split('_oob=')[1];
-
-        const base64Data = base64UrlToBase64(base64UrlPart);
-
-        const decodedCredencialOffer = Buffer.from(
-          base64Data,
-          'base64',
-        ).toString();
 
         const eventBus = new EventEmitter();
         const securityService = new SecurityService();
         const didService = new DidService(eventBus, securityService);
 
-        const rawResult = await didService.processMediatorOOB(
-          decodedCredencialOffer,
-        );
+        const rawResult = await didService.processMediatorOOB(credentialOffer);
 
         const result = rawResult as ProcessMediatorOOBResult;
 
@@ -68,8 +54,7 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            sessionStorage.setItem('result', JSON.stringify(result));
-            push('/success');
+            push('/success', { state: { result } });
           }
         } else {
           setError(result.message);
