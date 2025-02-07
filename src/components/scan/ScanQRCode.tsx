@@ -1,3 +1,5 @@
+import { DidService } from '@adorsys-gis/contact-exchange';
+import { SecurityService } from '@adorsys-gis/multiple-did-identities';
 import { QrScanner } from '@adorsys-gis/qr-scanner';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
@@ -9,11 +11,9 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { EventEmitter } from 'eventemitter3';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SecurityService } from '@adorsys-gis/multiple-did-identities';
-import { DidService } from '@adorsys-gis/contact-exchange';
-import { EventEmitter } from 'eventemitter3';
 
 interface ScanQRCodeProps {
   onScanSuccess?: (data: string) => void;
@@ -25,6 +25,10 @@ interface ProcessMediatorOOBResult {
   message: string;
 }
 
+const base64UrlToBase64 = (base64Url: string): string => {
+  return base64Url.replace(/-/g, '+').replace(/_/g, '/');
+};
+
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -34,33 +38,41 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   );
 
   const handleScan = async (data: string) => {
+    console.log('Scanned data:', data);
     setError(null);
     setIsLoading(true);
 
     try {
       if (data.includes('_oob=')) {
-        const url = new URL(data);
-        const oobEncoded = url.searchParams.get('_oob');
-        if (!oobEncoded) {
-          throw new Error('Invalid OOB invitation. Missing encoded payload.');
-        }
-
         const credentialOffer = data;
+        const base64UrlPart = data.split('_oob=')[1];
+
+        const base64Data = base64UrlToBase64(base64UrlPart);
+
+        const decodedCredencialOffer = Buffer.from(
+          base64Data,
+          'base64',
+        ).toString();
+
         const eventBus = new EventEmitter();
         const securityService = new SecurityService();
         const didService = new DidService(eventBus, securityService);
 
-        const rawResult = await didService.processMediatorOOB(credentialOffer);
+        const rawResult = await didService.processMediatorOOB(
+          decodedCredencialOffer,
+        );
+
         const result = rawResult as ProcessMediatorOOBResult;
 
         if (result.status === 'true') {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            push('/success', { state: { result } });
+            sessionStorage.setItem('result', JSON.stringify(result));
+            push('/success');
           }
         } else {
-          setError(result.message || 'Unknown error from backend');
+          setError(result.message);
         }
       } else if (data.startsWith('did:peer:')) {
         push('/add-contact', { state: { scannedDid: data } });
@@ -113,7 +125,6 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
           handleScan(result);
         }}
         onError={(err: unknown) => {
-          console.error('QR Scanner encountered an error:', err);
           setIsLoading(false);
           setError(
             err instanceof Error ? err.message : 'An unknown error occurred.',

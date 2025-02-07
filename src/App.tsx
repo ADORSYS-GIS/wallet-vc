@@ -3,13 +3,16 @@ import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import Messages from './components/Messages/Messages';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
+import SettingsPage from './pages/SettingsPage';
+import SuccessPage from './pages/SuccessPage';
+import Wallet from './pages/Wallet';
 import ChatPage from './pages/chat/ChatPage';
-import Messages from './components/Messages/Messages';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
@@ -17,9 +20,6 @@ import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
-import SettingsPage from './pages/SettingsPage';
-import Wallet from './pages/Wallet';
-import SuccessPage from './pages/SuccessPage';
 
 // Create the theme for the app
 const theme = createTheme();
