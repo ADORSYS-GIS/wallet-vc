@@ -28,7 +28,7 @@ interface ProcessMediatorOOBResult {
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const navigate = useNavigate();
+  const push = useNavigate();
   const isSmallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('sm'),
   );
@@ -57,13 +57,13 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            navigate('/success', { state: { result } });
+            push('/success', { state: { result } });
           }
         } else {
           setError(result.message || 'Unknown error from backend');
         }
       } else if (data.startsWith('did:peer:')) {
-        navigate('/add-contact', { state: { scannedDid: data } });
+        push('/add-contact', { state: { scannedDid: data } });
       } else {
         setError('Unrecognized QR code format.');
       }
@@ -83,7 +83,7 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
       <Tooltip arrow title="Back">
         <IconButton
           size="small"
-          onClick={onBack || (() => navigate('/'))}
+          onClick={onBack || (() => push('/'))}
           sx={{
             position: 'absolute',
             top: isSmallScreen ? 70 : 110,
