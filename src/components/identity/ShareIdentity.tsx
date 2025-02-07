@@ -6,13 +6,22 @@ import IdentitySelector from './IdentitySelector';
 
 interface ShareIdentityProps {
   identities: Identity[];
+  onDidSelect: (did: string) => void;
+  selectedDid: string | null;
 }
 
-const ShareIdentity: React.FC<ShareIdentityProps> = ({ identities }) => {
-  const [selectedDid, setSelectedDid] = useState<string>('');
+const ShareIdentity: React.FC<ShareIdentityProps> = ({
+  identities,
+  onDidSelect,
+  selectedDid,
+}) => {
+  const [localSelectedDid, setLocalSelectedDid] = useState<string | null>(
+    selectedDid,
+  );
 
   const handleSelectChange = (did: string) => {
-    setSelectedDid(did);
+    setLocalSelectedDid(did);
+    onDidSelect(did);
   };
 
   return (
@@ -41,10 +50,10 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({ identities }) => {
       </Typography>
       <IdentitySelector
         identities={identities}
-        selectedDid={selectedDid}
+        selectedDid={localSelectedDid}
         onChange={handleSelectChange}
       />
-      {selectedDid && <QRCodeDisplay qrCode={selectedDid} />}
+      {localSelectedDid && <QRCodeDisplay qrCode={localSelectedDid} />}
     </Box>
   );
 };
