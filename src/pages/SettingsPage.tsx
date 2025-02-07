@@ -15,6 +15,7 @@ const Settings: React.FC = () => {
       window.location.href = '/wallet';
     }, 1000); // 1000ms = 1s
   };
+
   return (
     <Box
       sx={{
@@ -27,9 +28,16 @@ const Settings: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 700,
+          marginTop: '20px',
+        }}
+      >
         Settings
       </Typography>
+
       <Box
         sx={{
           flexGrow: 1,
@@ -50,9 +58,14 @@ const Settings: React.FC = () => {
           </Button>
         </NavLink>
       </Box>
+
       {/* Logout Button */}
       <Box
-        sx={{ marginTop: 'auto', textAlign: 'center', marginBottom: '10px' }}
+        sx={{
+          marginTop: 'auto',
+          textAlign: 'center',
+          marginBottom: '40px',
+        }}
       >
         <Button
           variant="text"
@@ -63,6 +76,7 @@ const Settings: React.FC = () => {
             color: '#0063F7',
             fontWeight: 600,
             textTransform: 'none',
+            marginTop: '-15px',
           }}
         >
           Logout

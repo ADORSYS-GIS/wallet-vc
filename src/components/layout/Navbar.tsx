@@ -9,14 +9,14 @@ const Navbar: React.FC = () => {
         backgroundColor: '#F4F7FC',
         borderBottom: '2px solid #E1E1E1',
         boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-        height: '50px',
+        height: '80px',
         justifyContent: 'center',
         zIndex: 1000,
       }}
     >
       <Toolbar
         sx={{
-          minHeight: '50px',
+          minHeight: '80px',
           justifyContent: 'center',
         }}
       >

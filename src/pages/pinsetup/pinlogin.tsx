@@ -1,5 +1,6 @@
+import { Avatar, Box, Button, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
-import { TextField, Button, Typography, Container } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface PinLoginPageProps {
   onLogin: () => void;
@@ -12,11 +13,13 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
 }) => {
   const [inputPin, setInputPin] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
     if (inputPin === requiredPin) {
       setError(null);
-      onLogin(); // Call the login handler
+      onLogin();
+      navigate('/wallet');
     } else {
       setError('Invalid PIN. Please try again.');
     }
@@ -24,36 +27,56 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setInputPin(value); // Only allow numeric input
-      setError(null); // Clear error on valid input
+    if (/^\d*$/.test(value) && value.length <= 6) {
+      setInputPin(value);
+      setError(null);
     }
   };
 
   return (
-    <Container
-      maxWidth="xs"
-      style={{
+    <Box
+      sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        overflow: 'hidden',
+        backgroundColor: '#F4F7FC',
+        textAlign: 'center',
+        padding: '20px',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Logo */}
-      <img src="/assets/logo.png" alt="Logo" style={{ marginBottom: '10px' }} />
+      {/* Logo Image */}
+      <Avatar
+        alt="Secure Login"
+        src="/assets/security.png"
+        sx={{
+          width: { xs: 250, sm: 300, md: 350 },
+          height: { xs: 250, sm: 300, md: 350 },
+          marginTop: '-40px',
+        }}
+      />
 
-      {/* Header */}
-      <Typography
-        variant="h5"
-        style={{ marginBottom: '20px', fontWeight: 'bold' }}
-      >
-        Enter Your PIN
+      {/* Title */}
+      <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
+        Unlock Your Wallet
       </Typography>
 
-      {/* PIN Input */}
+      {/* Description */}
+      <Typography
+        variant="body1"
+        sx={{
+          color: '#555',
+          maxWidth: '80%',
+          lineHeight: 1.5,
+          marginBottom: '15px',
+        }}
+      >
+        Enter your 6-digit PIN to access your wallet securely.
+      </Typography>
+
+      {/* PIN Input Field */}
       <TextField
         type="password"
         value={inputPin}
@@ -62,35 +85,42 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
         variant="outlined"
         fullWidth
         error={!!error}
-        helperText={error}
-        style={{
-          marginBottom: '20px',
-        }}
+        helperText={error || ' '}
         slotProps={{
           htmlInput: {
             maxLength: 6,
             style: {
               textAlign: 'center',
+              fontSize: '20px',
+              letterSpacing: '3px',
             },
           },
         }}
+        sx={{
+          maxWidth: '280px',
+          mb: 3,
+        }}
       />
 
-      {/* Submit Button */}
+      {/* Login Button */}
       <Button
         onClick={handleSubmit}
         variant="contained"
-        color="primary"
         fullWidth
-        style={{
-          padding: '10px 20px',
+        disabled={inputPin.length !== 6}
+        sx={{
+          padding: '14px',
           fontSize: '16px',
-          borderRadius: '5px',
+          fontWeight: 'bold',
+          borderRadius: '8px',
+          textTransform: 'none',
+          maxWidth: '280px',
+          backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
         }}
       >
         Login
       </Button>
-    </Container>
+    </Box>
   );
 };
 

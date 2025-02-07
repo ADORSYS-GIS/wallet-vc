@@ -47,7 +47,7 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
           onClick={onBack || (() => push('/'))}
           sx={{
             position: 'absolute',
-            top: isSmallScreen ? 70 : 110,
+            top: isSmallScreen ? 80 : 130,
             left: 15,
             color: 'primary.main',
           }}

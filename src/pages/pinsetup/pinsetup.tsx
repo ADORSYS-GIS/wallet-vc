@@ -1,6 +1,6 @@
+import { Avatar, Box, Button, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Typography, Container } from '@mui/material';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -11,12 +11,11 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Tempory function on pin storage. Will be changed in the future
   const handleSubmit = () => {
     if (pin.length === 6 && /^\d+$/.test(pin)) {
-      localStorage.setItem('userPin', pin); // Save PIN to localStorage
-      onComplete(pin); // Pass the PIN to onComplete
-      navigate('/wallet'); // Navigate to the wallet page
+      localStorage.setItem('userPin', pin);
+      onComplete(pin);
+      navigate('/wallet');
     } else {
       setError('PIN must be exactly 6 digits');
     }
@@ -24,36 +23,56 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setPin(value); // Allow only numeric input
-      setError(null); // Clear error on valid input
+    if (/^\d*$/.test(value) && value.length <= 6) {
+      setPin(value);
+      if (value.length === 6) setError(null);
     }
   };
 
   return (
-    <Container
-      maxWidth="xs"
-      style={{
+    <Box
+      sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        overflow: 'hidden',
+        backgroundColor: '#F4F7FC',
+        textAlign: 'center',
+        padding: '20px',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Logo */}
-      <img src="/assets/logo.png" alt="Logo" style={{ marginBottom: '10px' }} />
+      {/* Image (Same style as Onboarding Page) */}
+      <Avatar
+        alt="Secure PIN"
+        src="/assets/security.png"
+        sx={{
+          width: { xs: 250, sm: 300, md: 350 },
+          height: { xs: 250, sm: 300, md: 350 },
+          marginTop: '-40px',
+        }}
+      />
 
-      {/* Header */}
-      <Typography
-        variant="h5"
-        style={{ marginBottom: '20px', fontWeight: 'bold' }}
-      >
-        Set Your PIN for Registration
+      {/* Title */}
+      <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
+        Secure Your Wallet
       </Typography>
 
-      {/* PIN Input */}
+      {/* Description */}
+      <Typography
+        variant="body1"
+        sx={{
+          color: '#555',
+          maxWidth: '80%',
+          lineHeight: 1.5,
+          marginBottom: '15px',
+        }}
+      >
+        Set a 6-digit PIN to keep your wallet secure.
+      </Typography>
+
+      {/* PIN Input Field */}
       <TextField
         type="password"
         value={pin}
@@ -62,35 +81,42 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
         variant="outlined"
         fullWidth
         error={!!error}
-        helperText={error}
-        style={{
-          marginBottom: '20px',
-        }}
+        helperText={error || ' '}
         slotProps={{
           htmlInput: {
             maxLength: 6,
             style: {
               textAlign: 'center',
+              fontSize: '20px',
+              letterSpacing: '3px',
             },
           },
         }}
+        sx={{
+          maxWidth: '280px',
+          mb: 3,
+        }}
       />
 
-      {/* Submit Button */}
+      {/* Submit Button (Styled like Onboarding Page) */}
       <Button
         onClick={handleSubmit}
         variant="contained"
-        color="primary"
         fullWidth
-        style={{
-          padding: '10px 20px',
+        disabled={pin.length !== 6}
+        sx={{
+          padding: '14px',
           fontSize: '16px',
-          borderRadius: '5px',
+          fontWeight: 'bold',
+          borderRadius: '8px',
+          textTransform: 'none',
+          maxWidth: '280px',
+          backgroundColor: pin.length === 6 ? '#007BFF' : '#ccc',
         }}
       >
-        Submit
+        Set PIN
       </Button>
-    </Container>
+    </Box>
   );
 };
 

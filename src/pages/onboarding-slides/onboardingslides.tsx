@@ -1,4 +1,5 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Avatar, Box, Button, Typography } from '@mui/material';
+import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,13 +19,13 @@ const slides: Slide[] = [
       'Welcome to a secure and seamless way to manage your verifiable credentials.',
   },
   {
-    image: '/assets/wallet-mult.png',
+    image: '/assets/digital-wallet.png',
     title: 'Store & Manage Credentials',
     description:
       'Safely store and organize your verifiable credentials in one secure location.',
   },
   {
-    image: '/assets/did-msg.png',
+    image: '/assets/connect.png',
     title: 'Connect & Communicate',
     description:
       'Exchange messages and credentials securely using DIDComm protocol.',
@@ -69,11 +70,10 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
     navigate('/setup-pin');
   };
 
-  // Swipeable hook for swipe gestures
   const handlers = useSwipeable({
-    onSwipedLeft: () => goToNextSlide(),
-    onSwipedRight: () => goToPreviousSlide(),
-    trackMouse: true, // This allows mouse swipes for testing on desktop
+    onSwipedLeft: goToNextSlide,
+    onSwipedRight: goToPreviousSlide,
+    trackMouse: true,
   });
 
   return (
@@ -81,90 +81,75 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100%',
-        padding: '10px',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        height: '100dvh',
+        backgroundColor: '#F4F7FC',
         textAlign: 'center',
+        paddingTop: { xs: '150px', sm: '180px', md: '200px' },
+        boxSizing: 'border-box',
         overflow: 'hidden',
+        gap: '20px',
       }}
       {...handlers}
     >
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          fontFamily: 'Roboto, sans-serif',
-          fontSize: '18px',
-          fontWeight: '500',
-          lineHeight: '1.5',
-          marginBottom: '8px',
-          marginTop: '4px',
-        }}
-      >
-        <img
-          src={slides[currentSlide].image}
-          alt={slides[currentSlide].title}
-          style={{
-            width: '100%',
-            borderRadius: '10px',
-            transition: 'transform 0.3s ease-in-out',
-          }}
-        />
-        <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-          {slides[currentSlide].title}
-        </Typography>
-        <Typography variant="body1" sx={{ marginTop: '4px' }}>
-          {slides[currentSlide].description}
-        </Typography>
-      </Box>
-
-      {/* Bottom Content */}
-      <Box
-        sx={{
+      <motion.div
+        key={currentSlide}
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+        transition={{ duration: 0.5 }}
+        style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          marginBottom: '35px',
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '10px',
-            marginBottom: '20px',
-          }}
+        <Avatar
+          alt={slides[currentSlide].title}
+          src={slides[currentSlide].image}
+          sx={{ width: 250, height: 250 }}
+        />
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 'bold', marginBottom: '15px' }}
         >
-          {currentSlide > 0 && (
-            <Button
-              onClick={goToPreviousSlide}
-              variant="contained"
-              sx={{
-                padding: '10px 20px',
-                backgroundColor: '#ccc',
-                borderRadius: '5px',
-                textTransform: 'none',
-              }}
-            >
-              Back
-            </Button>
-          )}
+          {slides[currentSlide].title}
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{ color: '#555', maxWidth: '80%', lineHeight: 1.5 }}
+        >
+          {slides[currentSlide].description}
+        </Typography>
+      </motion.div>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 30,
+          display: 'flex',
+          justifyContent: 'space-between',
+          width: '90%',
+          maxWidth: '450px',
+        }}
+      >
+        {currentSlide > 0 && (
           <Button
-            onClick={goToNextSlide}
+            onClick={goToPreviousSlide}
             variant="contained"
-            sx={{
-              padding: '10px 20px',
-              backgroundColor:
-                currentSlide === slides.length - 1 ? '#007BFF' : '#007BFF',
-              borderRadius: '5px',
-              textTransform: 'none',
-            }}
+            sx={{ backgroundColor: '#ccc' }}
           >
-            {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
+            Back
           </Button>
-        </Box>
+        )}
+        <Button
+          onClick={goToNextSlide}
+          variant="contained"
+          sx={{ backgroundColor: '#007BFF', marginLeft: 'auto' }}
+        >
+          {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
+        </Button>
       </Box>
     </Box>
   );
