@@ -24,6 +24,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { MessageExchangeService } from '@adorsys-gis/message-exchange';
 import {
   Message,
   MessageEventChannel,
@@ -31,7 +32,6 @@ import {
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { v4 as uuidv4 } from 'uuid';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -46,6 +46,15 @@ const ChatPage: React.FC = () => {
   ); // The DID to use for sending
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
+  // Get user PIN as it's needed to instantiate the message-exchange library
+  const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
+  useEffect(() => {
+    const storedPin = localStorage.getItem('userPin');
+    if (storedPin) {
+      setSecretPinNumber(parseInt(storedPin, 10)); // Convert to number
+    }
+  }, []);
+
   const handleOpenModal = () => setIsModalOpen(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
@@ -57,6 +66,12 @@ const ChatPage: React.FC = () => {
   // Memoize service creation
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
+  const messageExchangeService = useMemo(() => {
+    if (secretPinNumber !== null) {
+      return new MessageExchangeService(eventBus, secretPinNumber);
+    }
+    return null; // Return null if PIN is not set
+  }, [secretPinNumber]);
 
   useEffect(() => {
     const fetchContactDetails = async () => {
@@ -131,19 +146,6 @@ const ChatPage: React.FC = () => {
   }, [contactDID, contactId, messageService]);
 
   useEffect(() => {
-    // Event listener for when a message is created
-    const handleMessageCreated = (response: ServiceResponse<Message>) => {
-      if (
-        response.status === ServiceResponseStatus.Success &&
-        response.payload
-      ) {
-        setMessages((prevMessages) => [...prevMessages, response.payload]);
-        setErrorMessage(null);
-      } else {
-        setErrorMessage('Failed to send message.');
-      }
-    };
-
     // Event listener for when a message is deleted
     const handleDeleteMessageEvent = (
       response: ServiceResponse<{ id: string }>,
@@ -161,36 +163,30 @@ const ChatPage: React.FC = () => {
       }
     };
 
-    // Add event listeners once when the component mounts
-    eventBus.on(MessageEventChannel.CreateMessage, handleMessageCreated);
     eventBus.on(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
 
     // Cleanup event listeners on unmount
     return () => {
-      eventBus.off(MessageEventChannel.CreateMessage, handleMessageCreated);
+      eventBus.off(MessageEventChannel.CreateMessage);
       eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
     };
   }, []);
 
   // This should contain the logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' || !messageExchangeService) return;
 
     if (!selectedDID) {
       setIsModalOpen(true); // Open modal to get the user's DID
       return;
     }
 
-    const message: Message = {
-      id: uuidv4(),
-      text: newMessage,
-      sender: selectedDID, // sender identification
-      contactId: contactDID,
-      timestamp: new Date(),
-    };
-
-    // Send the message without adding a new event listener
-    messageService.createMessage(message);
+    // Send the message using MessageExchangeService
+    messageExchangeService.routeForwardMessage(
+      newMessage,
+      contactDID,
+      selectedDID,
+    );
     setNewMessage(''); // Clear the input after sending
   };
 
