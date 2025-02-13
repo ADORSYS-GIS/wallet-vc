@@ -1,4 +1,5 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Avatar, Box, Button, Typography } from '@mui/material';
+import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -13,31 +14,31 @@ interface Slide {
 const slides: Slide[] = [
   {
     image: '/assets/logo.png',
-    title: 'Your Digital Identity Hub',
+    title: 'Your Digital Identity <span style="color:#007BFF;">Hub</span>',
     description:
       'Welcome to a secure and seamless way to manage your verifiable credentials.',
   },
   {
-    image: '/assets/wallet-mult.png',
-    title: 'Store & Manage Credentials',
+    image: '/assets/digital-wallet.png',
+    title: 'Store & <span style="color:#007BFF;">Manage</span> Credentials',
     description:
       'Safely store and organize your verifiable credentials in one secure location.',
   },
   {
-    image: '/assets/did-msg.png',
-    title: 'Connect & Communicate',
+    image: '/assets/connect.png',
+    title: 'Connect & <span style="color:#007BFF;">Communicate</span>',
     description:
       'Exchange messages and credentials securely using DIDComm protocol.',
   },
   {
     image: '/assets/security.png',
-    title: 'Privacy First',
+    title: 'Privacy <span style="color:#007BFF;">First</span>',
     description:
       'Control what you share and with whom. Your credentials, your rules.',
   },
   {
     image: '/assets/ok.png',
-    title: 'Always Available',
+    title: 'Always <span style="color:#007BFF;">Available</span>',
     description:
       'Access your digital identity anytime, anywhere, across all your devices.',
   },
@@ -69,11 +70,10 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
     navigate('/setup-pin');
   };
 
-  // Swipeable hook for swipe gestures
   const handlers = useSwipeable({
-    onSwipedLeft: () => goToNextSlide(),
-    onSwipedRight: () => goToPreviousSlide(),
-    trackMouse: true, // This allows mouse swipes for testing on desktop
+    onSwipedLeft: goToNextSlide,
+    onSwipedRight: goToPreviousSlide,
+    trackMouse: true,
   });
 
   return (
@@ -81,90 +81,88 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100%',
-        padding: '10px',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        height: '100dvh',
+        backgroundColor: '#F4F7FC',
         textAlign: 'center',
+        paddingTop: { xs: '150px', sm: '180px', md: '200px' },
+        boxSizing: 'border-box',
         overflow: 'hidden',
+        gap: '20px',
       }}
       {...handlers}
     >
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          fontFamily: 'Roboto, sans-serif',
-          fontSize: '18px',
-          fontWeight: '500',
-          lineHeight: '1.5',
-          marginBottom: '8px',
-          marginTop: '4px',
-        }}
-      >
-        <img
-          src={slides[currentSlide].image}
-          alt={slides[currentSlide].title}
-          style={{
-            width: '100%',
-            borderRadius: '10px',
-            transition: 'transform 0.3s ease-in-out',
-          }}
-        />
-        <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-          {slides[currentSlide].title}
-        </Typography>
-        <Typography variant="body1" sx={{ marginTop: '4px' }}>
-          {slides[currentSlide].description}
-        </Typography>
-      </Box>
-
-      {/* Bottom Content */}
-      <Box
-        sx={{
+      <motion.div
+        key={currentSlide}
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+        transition={{ duration: 0.5 }}
+        style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          marginBottom: '35px',
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '10px',
-            marginBottom: '20px',
-          }}
+        <Avatar
+          alt="slide image"
+          src={slides[currentSlide].image}
+          sx={{ width: 250, height: 250 }}
+        />
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 'bold', marginBottom: '15px' }}
+          dangerouslySetInnerHTML={{ __html: slides[currentSlide].title }}
+        />
+        <Typography
+          variant="body1"
+          sx={{ color: '#555', maxWidth: '80%', lineHeight: 1.5 }}
         >
-          {currentSlide > 0 && (
-            <Button
-              onClick={goToPreviousSlide}
-              variant="contained"
+          {slides[currentSlide].description}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: '5px', marginTop: '40px' }}>
+          {slides.map((_, index) => (
+            <Box
+              key={index}
               sx={{
-                padding: '10px 20px',
-                backgroundColor: '#ccc',
-                borderRadius: '5px',
-                textTransform: 'none',
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: currentSlide === index ? '#007BFF' : '#ccc',
+                transition: 'background-color 0.3s ease',
               }}
-            >
-              Back
-            </Button>
-          )}
-          <Button
-            onClick={goToNextSlide}
-            variant="contained"
-            sx={{
-              padding: '10px 20px',
-              backgroundColor:
-                currentSlide === slides.length - 1 ? '#007BFF' : '#007BFF',
-              borderRadius: '5px',
-              textTransform: 'none',
-            }}
-          >
-            {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
-          </Button>
+            />
+          ))}
         </Box>
+      </motion.div>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 30,
+          display: 'flex',
+          justifyContent: 'space-between',
+          width: '90%',
+          maxWidth: '450px',
+        }}
+      >
+        {currentSlide > 0 && (
+          <Button
+            onClick={goToPreviousSlide}
+            variant="contained"
+            sx={{ backgroundColor: '#757575', color: '#fff' }}
+          >
+            Back
+          </Button>
+        )}
+        <Button
+          onClick={goToNextSlide}
+          variant="contained"
+          sx={{ backgroundColor: '#007BFF', marginLeft: 'auto' }}
+        >
+          {currentSlide === slides.length - 1 ? 'Finish' : 'Next'}
+        </Button>
       </Box>
     </Box>
   );

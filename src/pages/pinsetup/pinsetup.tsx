@@ -1,6 +1,14 @@
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  IconButton,
+  TextField,
+  Typography,
+} from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Typography, Container } from '@mui/material';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -8,89 +16,165 @@ interface PinSetupPageProps {
 
 const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [showPin, setShowPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
   const navigate = useNavigate();
 
-  // Tempory function on pin storage. Will be changed in the future
+  const isPinValid = pin.length === 6;
+  const isConfirmValid = confirmPin.length === 6 && pin === confirmPin;
+  const isFormValid = isPinValid && isConfirmValid;
+
   const handleSubmit = () => {
-    if (pin.length === 6 && /^\d+$/.test(pin)) {
-      localStorage.setItem('userPin', pin); // Save PIN to localStorage
-      onComplete(pin); // Pass the PIN to onComplete
-      navigate('/wallet'); // Navigate to the wallet page
+    if (isFormValid) {
+      localStorage.setItem('userPin', pin);
+      onComplete(pin);
+      navigate('/login');
     } else {
-      setError('PIN must be exactly 6 digits');
+      setConfirmError('PINs do not match');
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setPin(value); // Allow only numeric input
-      setError(null); // Clear error on valid input
+    if (/^\d*$/.test(value) && value.length <= 6) {
+      setPin(value);
+      setError(value.length === 6 ? null : 'PIN must be exactly 6 digits');
+    }
+  };
+
+  const handleConfirmPinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value) && value.length <= 6) {
+      setConfirmPin(value);
+      setConfirmError(
+        value.length === 6 && value !== pin ? 'PINs do not match' : null,
+      );
     }
   };
 
   return (
-    <Container
-      maxWidth="xs"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
+    <Box
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="90vh"
+      padding={3}
+      sx={{ backgroundColor: '#F4F7FC', textAlign: 'center' }}
     >
-      {/* Logo */}
-      <img src="/assets/logo.png" alt="Logo" style={{ marginBottom: '10px' }} />
-
-      {/* Header */}
-      <Typography
-        variant="h5"
-        style={{ marginBottom: '20px', fontWeight: 'bold' }}
-      >
-        Set Your PIN for Registration
-      </Typography>
-
-      {/* PIN Input */}
-      <TextField
-        type="password"
-        value={pin}
-        onChange={handleInputChange}
-        placeholder="Enter 6-digit PIN"
-        variant="outlined"
-        fullWidth
-        error={!!error}
-        helperText={error}
-        style={{
-          marginBottom: '20px',
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '400px',
+          background: 'white',
+          padding: { xs: '20px', sm: '40px' },
+          borderRadius: '10px',
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
         }}
-        slotProps={{
-          htmlInput: {
-            maxLength: 6,
-            style: {
-              textAlign: 'center',
+      >
+        <Avatar
+          alt="Secure PIN"
+          src="/assets/security.png"
+          sx={{ width: 80, height: 80, marginBottom: 2 }}
+        />
+        <Typography variant="h5" fontWeight="bold" marginBottom={1}>
+          Secure Your{' '}
+          <Box component="span" sx={{ color: '#007BFF' }}>
+            Wallet
+          </Box>
+        </Typography>
+
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          marginBottom={3}
+          textAlign="center"
+        >
+          Set a 6-digit PIN to keep your wallet secure.
+        </Typography>
+
+        <TextField
+          fullWidth
+          type={showPin ? 'text' : 'password'}
+          label="PIN"
+          value={pin}
+          onChange={handlePinChange}
+          error={!!error}
+          helperText={error || ' '}
+          sx={{ marginBottom: 2, minWidth: '280px' }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowPin(!showPin)}
+                  sx={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  {showPin ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              ),
             },
-          },
-        }}
-      />
+          }}
+        />
 
-      {/* Submit Button */}
-      <Button
-        onClick={handleSubmit}
-        variant="contained"
-        color="primary"
-        fullWidth
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          borderRadius: '5px',
-        }}
-      >
-        Submit
-      </Button>
-    </Container>
+        <TextField
+          fullWidth
+          type={showConfirmPin ? 'text' : 'password'}
+          label="Confirm PIN"
+          value={confirmPin}
+          onChange={handleConfirmPinChange}
+          error={!!confirmError}
+          helperText={confirmError || ' '}
+          sx={{ marginBottom: 2, minWidth: '280px' }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowConfirmPin(!showConfirmPin)}
+                  sx={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  {showConfirmPin ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              ),
+            },
+          }}
+        />
+
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          fullWidth
+          disabled={!isFormValid}
+          sx={{
+            padding: '12px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            textTransform: 'none',
+            backgroundColor: isFormValid ? '#007BFF' : '#ccc',
+            transition: '0.3s',
+            '&:hover': { backgroundColor: isFormValid ? '#0056b3' : '#ccc' },
+          }}
+        >
+          Set PIN
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
