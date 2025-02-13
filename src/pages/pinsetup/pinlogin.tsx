@@ -24,8 +24,10 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
   const [showPin, setShowPin] = useState(false);
   const navigate = useNavigate();
 
+  const isConfirmValid = inputPin === requiredPin;
+
   const handleSubmit = () => {
-    if (inputPin === requiredPin) {
+    if (isConfirmValid) {
       setError(null);
       onLogin();
       navigate('/');
@@ -50,10 +52,7 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
       alignItems="center"
       minHeight="90vh"
       padding={3}
-      sx={{
-        backgroundColor: '#F4F7FC',
-        textAlign: 'center',
-      }}
+      sx={{ backgroundColor: '#F4F7FC', textAlign: 'center' }}
     >
       <Box
         sx={{
@@ -62,19 +61,25 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
           alignItems: 'center',
           width: '100%',
           maxWidth: '400px',
-          padding: '32px',
+          padding: { xs: '20px', sm: '40px' },
+          background: 'white',
+          borderRadius: '10px',
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
         }}
       >
         {/* Logo Image */}
         <Avatar
           alt="Secure Login"
           src="/assets/security.png"
-          sx={{ width: 100, height: 100, marginBottom: 2 }}
+          sx={{ width: 80, height: 80, marginBottom: 2 }}
         />
 
         {/* Title */}
-        <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: 5 }}>
-          Unlock Your Wallet
+        <Typography variant="h5" fontWeight="bold" marginBottom={2}>
+          Unlock Your{' '}
+          <Box component="span" sx={{ color: '#007BFF' }}>
+            Wallet
+          </Box>
         </Typography>
 
         {/* Description */}
@@ -99,7 +104,7 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
           onChange={handleInputChange}
           error={!!error}
           helperText={error || ' '}
-          sx={{ marginBottom: 2 }}
+          sx={{ marginBottom: 2, minWidth: '280px' }}
           slotProps={{
             input: {
               endAdornment: (
@@ -132,6 +137,10 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
             borderRadius: '8px',
             textTransform: 'none',
             backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
+            transition: '0.3s',
+            '&:hover': {
+              backgroundColor: inputPin.length === 6 ? '#0056b3' : '#ccc',
+            },
           }}
         >
           Login

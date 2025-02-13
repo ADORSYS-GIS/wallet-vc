@@ -14,31 +14,31 @@ interface Slide {
 const slides: Slide[] = [
   {
     image: '/assets/logo.png',
-    title: 'Your Digital Identity Hub',
+    title: 'Your Digital Identity <span style="color:#007BFF;">Hub</span>',
     description:
       'Welcome to a secure and seamless way to manage your verifiable credentials.',
   },
   {
     image: '/assets/digital-wallet.png',
-    title: 'Store & Manage Credentials',
+    title: 'Store & <span style="color:#007BFF;">Manage</span> Credentials',
     description:
       'Safely store and organize your verifiable credentials in one secure location.',
   },
   {
     image: '/assets/connect.png',
-    title: 'Connect & Communicate',
+    title: 'Connect & <span style="color:#007BFF;">Communicate</span>',
     description:
       'Exchange messages and credentials securely using DIDComm protocol.',
   },
   {
     image: '/assets/security.png',
-    title: 'Privacy First',
+    title: 'Privacy <span style="color:#007BFF;">First</span>',
     description:
       'Control what you share and with whom. Your credentials, your rules.',
   },
   {
     image: '/assets/ok.png',
-    title: 'Always Available',
+    title: 'Always <span style="color:#007BFF;">Available</span>',
     description:
       'Access your digital identity anytime, anywhere, across all your devices.',
   },
@@ -106,22 +106,35 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
         }}
       >
         <Avatar
-          alt={slides[currentSlide].title}
+          alt="slide image"
           src={slides[currentSlide].image}
           sx={{ width: 250, height: 250 }}
         />
         <Typography
           variant="h6"
           sx={{ fontWeight: 'bold', marginBottom: '15px' }}
-        >
-          {slides[currentSlide].title}
-        </Typography>
+          dangerouslySetInnerHTML={{ __html: slides[currentSlide].title }}
+        />
         <Typography
           variant="body1"
           sx={{ color: '#555', maxWidth: '80%', lineHeight: 1.5 }}
         >
           {slides[currentSlide].description}
         </Typography>
+        <Box sx={{ display: 'flex', gap: '5px', marginTop: '40px' }}>
+          {slides.map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: currentSlide === index ? '#007BFF' : '#ccc',
+                transition: 'background-color 0.3s ease',
+              }}
+            />
+          ))}
+        </Box>
       </motion.div>
 
       <Box
@@ -138,7 +151,7 @@ const OnboardingSlides: React.FC<{ onComplete: () => void }> = ({
           <Button
             onClick={goToPreviousSlide}
             variant="contained"
-            sx={{ backgroundColor: '#ccc' }}
+            sx={{ backgroundColor: '#757575', color: '#fff' }}
           >
             Back
           </Button>

@@ -23,8 +23,12 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [showConfirmPin, setShowConfirmPin] = useState(false);
   const navigate = useNavigate();
 
+  const isPinValid = pin.length === 6;
+  const isConfirmValid = confirmPin.length === 6 && pin === confirmPin;
+  const isFormValid = isPinValid && isConfirmValid;
+
   const handleSubmit = () => {
-    if (pin.length === 6 && pin === confirmPin) {
+    if (isFormValid) {
       localStorage.setItem('userPin', pin);
       onComplete(pin);
       navigate('/login');
@@ -45,11 +49,9 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
     const value = e.target.value;
     if (/^\d*$/.test(value) && value.length <= 6) {
       setConfirmPin(value);
-      if (value.length === 6 && pin.length === 6 && value !== pin) {
-        setConfirmError('PINs do not match');
-      } else {
-        setConfirmError(null);
-      }
+      setConfirmError(
+        value.length === 6 && value !== pin ? 'PINs do not match' : null,
+      );
     }
   };
 
@@ -61,10 +63,7 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
       alignItems="center"
       minHeight="90vh"
       padding={3}
-      sx={{
-        backgroundColor: '#F4F7FC',
-        textAlign: 'center',
-      }}
+      sx={{ backgroundColor: '#F4F7FC', textAlign: 'center' }}
     >
       <Box
         sx={{
@@ -73,26 +72,29 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
           alignItems: 'center',
           width: '100%',
           maxWidth: '400px',
-          padding: '32px',
+          background: 'white',
+          padding: { xs: '20px', sm: '40px' },
+          borderRadius: '10px',
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
         }}
       >
         <Avatar
           alt="Secure PIN"
           src="/assets/security.png"
-          sx={{ width: 100, height: 100, marginBottom: 2 }}
+          sx={{ width: 80, height: 80, marginBottom: 2 }}
         />
-
-        <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: 5 }}>
-          Secure Your Wallet
+        <Typography variant="h5" fontWeight="bold" marginBottom={1}>
+          Secure Your{' '}
+          <Box component="span" sx={{ color: '#007BFF' }}>
+            Wallet
+          </Box>
         </Typography>
+
         <Typography
-          variant="body1"
-          sx={{
-            color: '#555',
-            maxWidth: '80%',
-            lineHeight: 1.5,
-            marginBottom: 3,
-          }}
+          variant="body2"
+          color="textSecondary"
+          marginBottom={3}
+          textAlign="center"
         >
           Set a 6-digit PIN to keep your wallet secure.
         </Typography>
@@ -105,7 +107,7 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
           onChange={handlePinChange}
           error={!!error}
           helperText={error || ' '}
-          sx={{ marginBottom: 2 }}
+          sx={{ marginBottom: 2, minWidth: '280px' }}
           slotProps={{
             input: {
               endAdornment: (
@@ -133,7 +135,7 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
           onChange={handleConfirmPinChange}
           error={!!confirmError}
           helperText={confirmError || ' '}
-          sx={{ marginBottom: 3 }}
+          sx={{ marginBottom: 2, minWidth: '280px' }}
           slotProps={{
             input: {
               endAdornment: (
@@ -157,17 +159,16 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
           onClick={handleSubmit}
           variant="contained"
           fullWidth
-          disabled={
-            pin.length !== 6 || confirmPin.length !== 6 || pin !== confirmPin
-          }
+          disabled={!isFormValid}
           sx={{
             padding: '12px',
             fontSize: '16px',
             fontWeight: 'bold',
             borderRadius: '8px',
             textTransform: 'none',
-            backgroundColor:
-              pin.length === 6 && pin === confirmPin ? '#007BFF' : '#ccc',
+            backgroundColor: isFormValid ? '#007BFF' : '#ccc',
+            transition: '0.3s',
+            '&:hover': { backgroundColor: isFormValid ? '#0056b3' : '#ccc' },
           }}
         >
           Set PIN
