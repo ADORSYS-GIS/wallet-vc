@@ -25,6 +25,7 @@ const theme = createTheme();
 
 function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
+  const navigate = useNavigate();
 
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
@@ -34,8 +35,6 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     sessionStorage.getItem('isLoggedIn') === 'true',
   );
-
-  const navigate = useNavigate();
 
   const sessionTimeout = 30 * 60 * 1000;
 
@@ -75,32 +74,21 @@ function App() {
     }
   }, []);
 
-  // Clear session on app closure or refresh
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      sessionStorage.removeItem('isLoggedIn');
-      sessionStorage.removeItem('sessionStart');
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
   const handleLogin = () => {
     setIsLoggedIn(true);
     sessionStorage.setItem('isLoggedIn', 'true');
     sessionStorage.setItem('sessionStart', Date.now().toString());
+    navigate('/'); // Navigate to home after login
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
+    navigate('/login'); // Navigate to login on logout
   };
 
-  // Know the state of the of the usePWA hook on the app
+  // Log the current PWA state
   console.log({
     isInstallable,
     isInstalled,
@@ -119,7 +107,7 @@ function App() {
               <OnboardingSlides
                 onComplete={() => {
                   localStorage.setItem('onboardingComplete', 'true');
-                  window.location.reload(); // Refresh to reflect changes
+                  navigate('/setup-pin'); // Navigate to PIN setup after onboarding
                 }}
               />
             }
@@ -135,7 +123,7 @@ function App() {
                 <PinSetupPage
                   onComplete={(pin: string) => {
                     localStorage.setItem('userPin', pin);
-                    navigate('/login', { replace: true }); // Redirect to login after setting PIN
+                    navigate('/login', { replace: true }); // Navigate to login after setting PIN
                   }}
                 />
               }
