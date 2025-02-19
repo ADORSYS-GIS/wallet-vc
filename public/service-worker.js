@@ -1,9 +1,11 @@
+/* eslint-disable no-undef */
 /* eslint-disable no-restricted-globals */
 
 // Provide configured baseHref
 const fetchBaseHref = async () => {
   const manifestUrl = '/manifest.json';
 
+  // eslint-disable-next-line no-undef
   const cache = await caches.open('v2');
   let response = await cache.match(manifestUrl);
 
@@ -24,9 +26,12 @@ const addResourcesToCache = async (resources) => {
 };
 
 const cacheResponse = async (request, response) => {
-  const cache = await caches.open('v2');
-  if (request.url.startsWith('http') || request.url.startsWith('https')) {
-    await cache.put(request, response);
+  // Only cache GET requests
+  if (request.method === 'GET') {
+    const cache = await caches.open('v2');
+    if (request.url.startsWith('http') || request.url.startsWith('https')) {
+      await cache.put(request, response);
+    }
   }
 };
 
@@ -41,6 +46,7 @@ async function fetchAndCache(request) {
     // response can only be used once so we clone a copy for cache
     cacheResponse(request, networkResponse.clone());
     return networkResponse;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     const fallbackResponse = await caches.match(await fetchBaseHref());
     if (fallbackResponse) {

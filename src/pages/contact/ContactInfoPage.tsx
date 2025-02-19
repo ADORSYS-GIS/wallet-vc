@@ -223,7 +223,7 @@ const ContactInfoPage: React.FC = () => {
           cursor: 'pointer',
           fontWeight: 'bold',
           marginTop: 'auto',
-          marginBottom: '30px',
+          marginBottom: '37px',
         }}
         onClick={handleDeleteClick}
       >
@@ -242,7 +242,7 @@ const ContactInfoPage: React.FC = () => {
         <Typography
           variant="body2"
           color="success.main"
-          sx={{ marginBottom: 2 }}
+          sx={{ marginBottom: 10 }}
         >
           {deleteSuccess}
         </Typography>
