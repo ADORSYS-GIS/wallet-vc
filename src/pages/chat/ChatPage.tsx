@@ -21,14 +21,19 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import {
+  DidRepository,
+  SecurityService,
+} from '@adorsys-gis/multiple-did-identities';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { MessageExchangeService } from '@adorsys-gis/message-exchange';
+import { MessageRouter } from '@adorsys-gis/message-exchange';
 import {
   Message,
   MessageEventChannel,
   MessageService,
+  MessageRepository,
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -51,7 +56,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     const storedPin = localStorage.getItem('userPin');
     if (storedPin) {
-      setSecretPinNumber(parseInt(storedPin, 10)); // Convert to number
+      setSecretPinNumber(parseInt(storedPin, 10));
     }
   }, []);
 
@@ -66,9 +71,13 @@ const ChatPage: React.FC = () => {
   // Memoize service creation
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
-  const messageExchangeService = useMemo(() => {
+  const messageRouter = useMemo(() => {
     if (secretPinNumber !== null) {
-      return new MessageExchangeService(eventBus, secretPinNumber);
+      return new MessageRouter(
+        new DidRepository(new SecurityService()),
+        new MessageRepository(),
+        secretPinNumber,
+      );
     }
     return null; // Return null if PIN is not set
   }, [secretPinNumber]);
@@ -110,39 +119,40 @@ const ChatPage: React.FC = () => {
     const fetchMessages = async () => {
       if (contactId) {
         messageService.getAllMessagesByContact(contactDID);
-
-        const handleMessagesReceived = (
-          response: ServiceResponse<Message[]>,
-        ) => {
-          if (
-            response.status === ServiceResponseStatus.Success &&
-            response.payload
-          ) {
-            // Ensure messages are sorted by a timestamp property
-            const sortedMessages = [...response.payload].sort(
-              (a, b) =>
-                new Date(a.timestamp).getTime() -
-                new Date(b.timestamp).getTime(),
-            );
-
-            setMessages(sortedMessages);
-            setErrorMessage(null);
-          } else {
-            setErrorMessage('Failed to fetch messages.');
-          }
-        };
-
-        const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
-        eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
-        return () => {
-          eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
-        };
       } else {
         setErrorMessage('Contact DID is undefined.');
       }
     };
 
+    const handleMessagesReceived = (response: ServiceResponse<Message[]>) => {
+      if (
+        response.status === ServiceResponseStatus.Success &&
+        response.payload
+      ) {
+        const sortedMessages = response.payload.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        );
+        setMessages(sortedMessages);
+        setErrorMessage(null);
+      } else {
+        setErrorMessage('Failed to fetch messages.');
+      }
+    };
+
+    const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
+    eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
+
+    // Fetch messages initially
     fetchMessages();
+
+    // Poll messages after 0.5 seconds
+    const intervalId = setInterval(fetchMessages, 500);
+
+    return () => {
+      clearInterval(intervalId);
+      eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
+    };
   }, [contactDID, contactId, messageService]);
 
   useEffect(() => {
@@ -174,20 +184,28 @@ const ChatPage: React.FC = () => {
 
   // This should contain the logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '' || !messageExchangeService) return;
+    if (newMessage.trim() === '' || !messageRouter) return;
 
     if (!selectedDID) {
       setIsModalOpen(true); // Open modal to get the user's DID
       return;
     }
 
-    // Send the message using MessageExchangeService
-    messageExchangeService.routeForwardMessage(
-      newMessage,
-      contactDID,
-      selectedDID,
-    );
-    setNewMessage(''); // Clear the input after sending
+    console.log(selectedDID);
+    console.log(newMessage);
+    console.log(secretPinNumber);
+
+    // Send the message using MessageRouter
+    try {
+      await messageRouter.routeForwardMessage(
+        newMessage,
+        contactDID,
+        selectedDID,
+      );
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   // Handle modal submission
@@ -319,7 +337,7 @@ const ChatPage: React.FC = () => {
         sx={{
           flexGrow: 1,
           padding: 2,
-          backgroundColor: 'rgba(0, 0, 0, 0.09)',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
@@ -400,7 +418,8 @@ const ChatPage: React.FC = () => {
           padding: 2,
           display: 'flex',
           alignItems: 'center',
-          marginBottom: '1px',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          marginBottom: '20px',
         }}
       >
         <TextField
