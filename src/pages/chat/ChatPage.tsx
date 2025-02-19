@@ -5,6 +5,10 @@ import {
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
 import {
+  DidRepository,
+  SecurityService,
+} from '@adorsys-gis/multiple-did-identities';
+import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
@@ -21,10 +25,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  DidRepository,
-  SecurityService,
-} from '@adorsys-gis/multiple-did-identities';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -32,8 +32,8 @@ import { MessageRouter } from '@adorsys-gis/message-exchange';
 import {
   Message,
   MessageEventChannel,
-  MessageService,
   MessageRepository,
+  MessageService,
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
