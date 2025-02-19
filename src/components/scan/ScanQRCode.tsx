@@ -20,11 +20,6 @@ interface ScanQRCodeProps {
   onBack?: () => void;
 }
 
-interface ProcessMediatorOOBResult {
-  status: string; // "true" for success or "false" for error
-  message: string;
-}
-
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -34,7 +29,6 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   );
 
   const handleScan = async (data: string) => {
-    console.log('Scanned data:', data);
     setError(null);
     setIsLoading(true);
 
@@ -48,21 +42,19 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
 
         const rawResult = await didService.processMediatorOOB(credentialOffer);
 
-        const result = rawResult as ProcessMediatorOOBResult;
-
-        if (result.status === 'true') {
+        if (rawResult) {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            push('/success', { state: { result } });
+            push('/success', { state: { result: rawResult } });
           }
         } else {
-          setError(result.message);
+          throw new Error('operation failed');
         }
       } else if (data.startsWith('did:peer:')) {
         push('/add-contact', { state: { scannedDid: data } });
       } else {
-        setError('Unrecognized QR code format.');
+        throw new Error('Unrecognized QR code format.');
       }
     } catch (e) {
       setError(
