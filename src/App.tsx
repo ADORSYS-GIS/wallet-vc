@@ -2,11 +2,11 @@ import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
-import Messages from './components/Messages/Messages';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
+import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
 import SettingsPage from './pages/SettingsPage';
@@ -26,6 +26,7 @@ const theme = createTheme();
 
 function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
+  const navigate = useNavigate();
 
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
@@ -74,32 +75,21 @@ function App() {
     }
   }, []);
 
-  // Clear session on app closure or refresh
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      sessionStorage.removeItem('isLoggedIn');
-      sessionStorage.removeItem('sessionStart');
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
   const handleLogin = () => {
     setIsLoggedIn(true);
     sessionStorage.setItem('isLoggedIn', 'true');
     sessionStorage.setItem('sessionStart', Date.now().toString());
+    navigate('/'); // Navigate to home after login
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
+    navigate('/login'); // Navigate to login on logout
   };
 
-  // Know the state of the of the usePWA hook on the app
+  // Log the current PWA state
   console.log({
     isInstallable,
     isInstalled,
@@ -118,7 +108,7 @@ function App() {
               <OnboardingSlides
                 onComplete={() => {
                   localStorage.setItem('onboardingComplete', 'true');
-                  window.location.reload(); // Refresh to reflect changes
+                  navigate('/setup-pin'); // Navigate to PIN setup after onboarding
                 }}
               />
             }
@@ -127,30 +117,36 @@ function App() {
 
         {/* PIN setup route */}
         {hasCompletedOnboarding && !hasSetPin && (
-          <Route
-            path="*"
-            element={
-              <PinSetupPage
-                onComplete={(pin: string) => {
-                  localStorage.setItem('userPin', pin);
-                  window.location.reload(); // Refresh to reflect changes
-                }}
-              />
-            }
-          />
+          <>
+            <Route
+              path="/setup-pin"
+              element={
+                <PinSetupPage
+                  onComplete={(pin: string) => {
+                    localStorage.setItem('userPin', pin);
+                    navigate('/login', { replace: true }); // Navigate to login after setting PIN
+                  }}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/setup-pin" />} />
+          </>
         )}
 
         {/* PIN login route */}
         {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
-          <Route
-            path="*"
-            element={
-              <PinLoginPage
-                onLogin={handleLogin}
-                requiredPin={localStorage.getItem('userPin') || ''}
-              />
-            }
-          />
+          <>
+            <Route
+              path="/login"
+              element={
+                <PinLoginPage
+                  onLogin={handleLogin}
+                  requiredPin={localStorage.getItem('userPin') || ''}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
         )}
 
         {/* Main app routes with Navbar and BottomNav */}
