@@ -33,8 +33,8 @@ export default function ShareIdentityPage() {
       }
     };
 
-    eventBus.on(DidEventChannel.GetMediatorDidIdentities, handleDIDResponse);
-    didIdentityService.findMediatorDidIdentities();
+    eventBus.on(DidEventChannel.GetPeerContactDidIdentities, handleDIDResponse);
+    didIdentityService.findPeerContactDidIdentities();
 
     return () => {
       eventBus.off(

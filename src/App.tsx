@@ -8,12 +8,11 @@ import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
 import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
-// import ActivitiesPage from './pages/ActivitiesPage';
+import ActivitiesPage from './pages/ActivitiesPage';
 import ChatPage from './pages/chat/ChatPage';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
 import ContactsPage from './pages/contact/ContactsPage';
-import CreateDIDForm from './pages/contact/CreateDIDForm';
 import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
@@ -165,7 +164,7 @@ function App() {
                       path="/share-identity"
                       element={<ShareIdentityPage />}
                     />
-                    <Route path="/activities" element={<CreateDIDForm />} />
+                    <Route path="/activities" element={<ActivitiesPage />} />
                     <Route path="/messages" element={<Messages />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/add-contact" element={<AddContactForm />} />
