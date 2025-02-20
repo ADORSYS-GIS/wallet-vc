@@ -9,6 +9,9 @@ import Navbar from './components/layout/Navbar';
 import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
+import SettingsPage from './pages/SettingsPage';
+import SuccessPage from './pages/SuccessPage';
+import Wallet from './pages/Wallet';
 import ChatPage from './pages/chat/ChatPage';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
@@ -17,8 +20,6 @@ import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
-import SettingsPage from './pages/SettingsPage';
-import Wallet from './pages/Wallet';
 
 // Create the theme for the app
 const theme = createTheme();
@@ -174,6 +175,7 @@ function App() {
                       element={<ContactInfoPage />}
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
+                    <Route path="/Success" element={<SuccessPage />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />

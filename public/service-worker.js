@@ -24,6 +24,9 @@ const addResourcesToCache = async (resources) => {
 };
 
 const cacheResponse = async (request, response) => {
+  if (request.method !== 'GET') {
+    return;
+  }
   const cache = await caches.open('v2');
   if (request.url.startsWith('http') || request.url.startsWith('https')) {
     await cache.put(request, response);

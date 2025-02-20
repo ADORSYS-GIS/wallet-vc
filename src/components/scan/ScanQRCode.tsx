@@ -1,3 +1,5 @@
+import { DidService } from '@adorsys-gis/contact-exchange';
+import { SecurityService } from '@adorsys-gis/multiple-did-identities';
 import { QrScanner } from '@adorsys-gis/qr-scanner';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
@@ -9,7 +11,8 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import React, { useState } from 'react';
+import { EventEmitter } from 'eventemitter3';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ScanQRCodeProps {
@@ -21,21 +24,55 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const push = useNavigate();
-
   const isSmallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('sm'),
   );
 
-  const handleScan = (data: string) => {
-    setError(null);
-    setIsLoading(false);
+  const eventBus = useMemo(() => new EventEmitter(), []);
+  const securityService = useMemo(() => new SecurityService(), []);
+  const didService = useMemo(
+    () => new DidService(eventBus, securityService),
+    [eventBus, securityService],
+  );
 
-    if (onScanSuccess) {
-      onScanSuccess(data);
-    } else if (data.startsWith('did:peer:')) {
-      push('/add-contact', { state: { scannedDid: data } });
-    } else {
-      setError('Unrecognized QR code format.');
+  const handleScan = async (data: string) => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (data.includes('_oob=')) {
+        const credentialOffer = data;
+
+        const rawResult = await didService.processMediatorOOB(credentialOffer);
+
+        if (rawResult) {
+          if (onScanSuccess) {
+            onScanSuccess(credentialOffer);
+          } else {
+            push('/success', {
+              state: {
+                result: rawResult,
+              },
+            });
+          }
+        } else {
+          throw new Error('operation failed');
+        }
+      } else if (data.startsWith('did:peer:')) {
+        push('/add-contact', { state: { scannedDid: data } });
+      } else {
+        throw new Error('Unrecognized QR code format.');
+      }
+    } catch (e) {
+      console.error('Error scanning QR code:', e);
+      const genericError = 'An unexpected error occurred. Please try again.';
+      push('/success', {
+        state: {
+          error: genericError,
+        },
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,7 +105,11 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
       )}
 
       <QrScanner
-        onResult={handleScan}
+        facingMode="environment"
+        scanDelay={500}
+        onResult={(result: string) => {
+          handleScan(result);
+        }}
         onError={(err: unknown) => {
           setIsLoading(false);
           setError(
