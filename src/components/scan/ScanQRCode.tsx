@@ -12,7 +12,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { EventEmitter } from 'eventemitter3';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ScanQRCodeProps {
@@ -28,6 +28,13 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
     theme.breakpoints.down('sm'),
   );
 
+  const eventBus = useMemo(() => new EventEmitter(), []);
+  const securityService = useMemo(() => new SecurityService(), []);
+  const didService = useMemo(
+    () => new DidService(eventBus, securityService),
+    [eventBus, securityService],
+  );
+
   const handleScan = async (data: string) => {
     setError(null);
     setIsLoading(true);
@@ -36,17 +43,17 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
       if (data.includes('_oob=')) {
         const credentialOffer = data;
 
-        const eventBus = new EventEmitter();
-        const securityService = new SecurityService();
-        const didService = new DidService(eventBus, securityService);
-
         const rawResult = await didService.processMediatorOOB(credentialOffer);
 
         if (rawResult) {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            push('/success', { state: { result: rawResult } });
+            push('/success', {
+              state: {
+                result: rawResult,
+              },
+            });
           }
         } else {
           throw new Error('operation failed');
@@ -57,11 +64,13 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
         throw new Error('Unrecognized QR code format.');
       }
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : 'An error occurred while processing the scanned data.',
-      );
+      console.error('Error scanning QR code:', e);
+      const genericError = 'An unexpected error occurred. Please try again.';
+      push('/success', {
+        state: {
+          error: genericError,
+        },
+      });
     } finally {
       setIsLoading(false);
     }
