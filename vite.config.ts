@@ -3,7 +3,7 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
-const tsconfigPaths = (await import('vite-tsconfig-paths')).default; // Import `vite-tsconfig-paths` dynamically
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 // https://vitejs.dev/config/
 export default defineConfig({
