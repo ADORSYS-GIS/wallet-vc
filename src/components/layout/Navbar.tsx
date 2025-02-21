@@ -7,7 +7,7 @@ const Navbar: React.FC = () => {
       position="sticky"
       sx={{
         backgroundColor: '#F4F7FC',
-        borderBottom: '2px solid #E1E1E1',
+        borderBottom: '1px solid #E1E1E1',
         boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
         height: '80px',
         justifyContent: 'center',
