@@ -191,10 +191,6 @@ const ChatPage: React.FC = () => {
       return;
     }
 
-    console.log(selectedDID);
-    console.log(newMessage);
-    console.log(secretPinNumber);
-
     // Send the message using MessageRouter
     try {
       await messageRouter.routeForwardMessage(
