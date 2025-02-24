@@ -5,6 +5,10 @@ import {
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
 import {
+  DidRepository,
+  SecurityService,
+} from '@adorsys-gis/multiple-did-identities';
+import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
@@ -24,14 +28,15 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { MessageRouter } from '@adorsys-gis/message-exchange';
 import {
   Message,
   MessageEventChannel,
+  MessageRepository,
   MessageService,
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { v4 as uuidv4 } from 'uuid';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -46,6 +51,15 @@ const ChatPage: React.FC = () => {
   ); // The DID to use for sending
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
+  // Get user PIN as it's needed to instantiate the message-exchange library
+  const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
+  useEffect(() => {
+    const storedPin = localStorage.getItem('userPin');
+    if (storedPin) {
+      setSecretPinNumber(parseInt(storedPin, 10));
+    }
+  }, []);
+
   const handleOpenModal = () => setIsModalOpen(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
@@ -57,6 +71,16 @@ const ChatPage: React.FC = () => {
   // Memoize service creation
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
+  const messageRouter = useMemo(() => {
+    if (secretPinNumber !== null) {
+      return new MessageRouter(
+        new DidRepository(new SecurityService()),
+        new MessageRepository(),
+        secretPinNumber,
+      );
+    }
+    return null; // Return null if PIN is not set
+  }, [secretPinNumber]);
 
   useEffect(() => {
     const fetchContactDetails = async () => {
@@ -95,55 +119,43 @@ const ChatPage: React.FC = () => {
     const fetchMessages = async () => {
       if (contactId) {
         messageService.getAllMessagesByContact(contactDID);
-
-        const handleMessagesReceived = (
-          response: ServiceResponse<Message[]>,
-        ) => {
-          if (
-            response.status === ServiceResponseStatus.Success &&
-            response.payload
-          ) {
-            // Ensure messages are sorted by a timestamp property
-            const sortedMessages = [...response.payload].sort(
-              (a, b) =>
-                new Date(a.timestamp).getTime() -
-                new Date(b.timestamp).getTime(),
-            );
-
-            setMessages(sortedMessages);
-            setErrorMessage(null);
-          } else {
-            setErrorMessage('Failed to fetch messages.');
-          }
-        };
-
-        const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
-        eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
-        return () => {
-          eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
-        };
       } else {
         setErrorMessage('Contact DID is undefined.');
       }
     };
 
-    fetchMessages();
-  }, [contactDID, contactId, messageService]);
-
-  useEffect(() => {
-    // Event listener for when a message is created
-    const handleMessageCreated = (response: ServiceResponse<Message>) => {
+    const handleMessagesReceived = (response: ServiceResponse<Message[]>) => {
       if (
         response.status === ServiceResponseStatus.Success &&
         response.payload
       ) {
-        setMessages((prevMessages) => [...prevMessages, response.payload]);
+        const sortedMessages = response.payload.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        );
+        setMessages(sortedMessages);
         setErrorMessage(null);
       } else {
-        setErrorMessage('Failed to send message.');
+        setErrorMessage('Failed to fetch messages.');
       }
     };
 
+    const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
+    eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
+
+    // Fetch messages initially
+    fetchMessages();
+
+    // Poll messages after 0.5 seconds
+    const intervalId = setInterval(fetchMessages, 500);
+
+    return () => {
+      clearInterval(intervalId);
+      eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
+    };
+  }, [contactDID, contactId, messageService]);
+
+  useEffect(() => {
     // Event listener for when a message is deleted
     const handleDeleteMessageEvent = (
       response: ServiceResponse<{ id: string }>,
@@ -161,37 +173,35 @@ const ChatPage: React.FC = () => {
       }
     };
 
-    // Add event listeners once when the component mounts
-    eventBus.on(MessageEventChannel.CreateMessage, handleMessageCreated);
     eventBus.on(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
 
     // Cleanup event listeners on unmount
     return () => {
-      eventBus.off(MessageEventChannel.CreateMessage, handleMessageCreated);
+      eventBus.off(MessageEventChannel.CreateMessage);
       eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
     };
   }, []);
 
   // This should contain the logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' || !messageRouter) return;
 
     if (!selectedDID) {
       setIsModalOpen(true); // Open modal to get the user's DID
       return;
     }
 
-    const message: Message = {
-      id: uuidv4(),
-      text: newMessage,
-      sender: selectedDID, // sender identification
-      contactId: contactDID,
-      timestamp: new Date(),
-    };
-
-    // Send the message without adding a new event listener
-    messageService.createMessage(message);
-    setNewMessage(''); // Clear the input after sending
+    // Send the message using MessageRouter
+    try {
+      await messageRouter.routeForwardMessage(
+        newMessage,
+        contactDID,
+        selectedDID,
+      );
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   // Handle modal submission
@@ -323,7 +333,7 @@ const ChatPage: React.FC = () => {
         sx={{
           flexGrow: 1,
           padding: 2,
-          backgroundColor: 'rgba(0, 0, 0, 0.09)',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
@@ -404,7 +414,8 @@ const ChatPage: React.FC = () => {
           padding: 2,
           display: 'flex',
           alignItems: 'center',
-          marginBottom: '1px',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          marginBottom: '20px',
         }}
       >
         <TextField

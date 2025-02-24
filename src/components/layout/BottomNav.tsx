@@ -29,9 +29,7 @@ const BottomNav: React.FC = () => {
           >
             <FaWallet
               size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
+              style={{ color: isActive ? '#0063F7' : '#808080' }}
             />
             <Typography
               sx={{
@@ -59,9 +57,7 @@ const BottomNav: React.FC = () => {
           >
             <FaUser
               size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
+              style={{ color: isActive ? '#0063F7' : '#808080' }}
             />
             <Typography
               sx={{
@@ -89,9 +85,7 @@ const BottomNav: React.FC = () => {
           >
             <FaCamera
               size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
+              style={{ color: isActive ? '#0063F7' : '#808080' }}
             />
             <Typography
               sx={{
@@ -119,9 +113,7 @@ const BottomNav: React.FC = () => {
           >
             <FaEnvelope
               size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
+              style={{ color: isActive ? '#0063F7' : '#808080' }}
             />
             <Typography
               sx={{
@@ -149,9 +141,7 @@ const BottomNav: React.FC = () => {
           >
             <FaCog
               size={24}
-              style={{
-                color: isActive ? '#0063F7' : '#808080',
-              }}
+              style={{ color: isActive ? '#0063F7' : '#808080' }}
             />
             <Typography
               sx={{
