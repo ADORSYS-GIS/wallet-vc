@@ -8,7 +8,8 @@ import MainSection from './components/layout/MainSection';
 import Navbar from './components/layout/Navbar';
 import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
-import ActivitiesPage from './pages/ActivitiesPage';
+// import ActivitiesPage from './pages/ActivitiesPage';
+import CreateDIDForm from './pages/contact/CreateDIDForm';
 import SettingsPage from './pages/SettingsPage';
 import SuccessPage from './pages/SuccessPage';
 import Wallet from './pages/Wallet';
@@ -165,7 +166,7 @@ function App() {
                       path="/share-identity"
                       element={<ShareIdentityPage />}
                     />
-                    <Route path="/activities" element={<ActivitiesPage />} />
+                    <Route path="/activities" element={<CreateDIDForm />} />
                     <Route path="/messages" element={<Messages />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/add-contact" element={<AddContactForm />} />

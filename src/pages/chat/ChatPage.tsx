@@ -37,6 +37,7 @@ import {
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { MessagePickup } from 'message-pickup';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -81,6 +82,51 @@ const ChatPage: React.FC = () => {
     }
     return null; // Return null if PIN is not set
   }, [secretPinNumber]);
+
+  // Memoize repository creation
+  const didRepository = useMemo(
+    () => new DidRepository(new SecurityService()),
+    [],
+  );
+  const messageRepository = useMemo(() => new MessageRepository(), []);
+
+  // Memoize MessagePickup creation
+  const messagePickup = useMemo(() => {
+    if (secretPinNumber !== null) {
+      return new MessagePickup(
+        didRepository,
+        secretPinNumber,
+        messageRepository,
+      );
+    }
+    return null;
+  }, [didRepository, secretPinNumber, messageRepository]);
+
+  const mediatorDid = 'did:example:mediator'; // Replace with your actual mediator DID
+
+  useEffect(() => {
+    if (!messagePickup || !selectedDID || !contactDID) return;
+
+    const checkAndSyncMessages = async () => {
+      try {
+        const messageCount = await messagePickup.processStatusRequest(
+          mediatorDid,
+          selectedDID,
+        );
+        if (messageCount > 0) {
+          await messagePickup.processDeliveryRequest(mediatorDid, selectedDID);
+          messageService.getAllMessagesByContact(contactDID);
+        }
+      } catch (error) {
+        console.error('Error checking or syncing messages:', error);
+        setErrorMessage('Failed to check or sync messages from mediator.');
+      }
+    };
+
+    checkAndSyncMessages();
+    const intervalId = setInterval(checkAndSyncMessages, 5000);
+    return () => clearInterval(intervalId);
+  }, [messagePickup, selectedDID, mediatorDid, contactDID, messageService]);
 
   useEffect(() => {
     const fetchContactDetails = async () => {
@@ -346,11 +392,10 @@ const ChatPage: React.FC = () => {
             sx={{
               padding: 1,
               marginBottom: 1,
-              alignSelf:
-                msg.contactId === contactDID ? 'flex-end' : 'flex-start',
+              alignSelf: msg.direction === 'out' ? 'flex-end' : 'flex-start',
               backgroundColor:
-                msg.contactId === contactDID ? 'lightgrey' : 'lightgrey',
-              color: msg.contactId === contactDID ? 'black' : 'white',
+                msg.contactId === 'out' ? 'lightgrey' : 'lightgrey',
+              color: msg.contactId === 'out' ? 'black' : 'white',
               borderRadius: 3,
               display: 'inline-block',
               maxWidth: '50%',
