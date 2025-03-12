@@ -50,8 +50,9 @@ const ChatPage: React.FC = () => {
   const [contactDID, setContactDID] = useState<string>('');
   const [userDID, setUserDID] = useState<string>(''); // State to store user DID
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedDID, setSelectedDID] = useState<string | null>(); // The DID to use for sending
+  const [messagingDID, setMessagingDID] = useState<string | null>(); // The DID to use for sending
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [didForMediation, setdidForMediation] = useState<string | null>(null); // Mediator DID
 
   // Get user PIN as it's needed to instantiate the message-exchange library
   const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
@@ -114,7 +115,7 @@ const ChatPage: React.FC = () => {
   const securityService = new SecurityService();
   const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
-  // get and set selectedDID for sending messages (first DID generated for the mediation request)
+  // get and set MessagingDID for sending messages
   useEffect(() => {
     const handleDIDResponse = ({
       status,
@@ -126,11 +127,48 @@ const ChatPage: React.FC = () => {
       if (status === ServiceResponseStatus.Success) {
         setDids(payload);
         if (payload.length > 0) {
-          setSelectedDID(payload[0].did); // get the first DID
+          setMessagingDID(payload[0].did);
         }
         setErrorMessage(null);
       } else {
         setErrorMessage('An error occurred while fetching DIDs');
+      }
+    };
+
+    eventBus.on(DidEventChannel.GetPeerContactDidIdentities, handleDIDResponse);
+    didIdentityService.findPeerContactDidIdentities();
+
+    return () => {
+      eventBus.off(
+        DidEventChannel.GetPeerContactDidIdentities,
+        handleDIDResponse,
+      );
+    };
+  }, []);
+
+  // FIRST DID TEST
+  // get did for unpacking packed messages from mediator
+  useEffect(() => {
+    const handleDIDResponse = ({
+      status,
+      payload,
+    }: {
+      status: ServiceResponseStatus;
+      payload: { did: string }[];
+    }) => {
+      if (status === ServiceResponseStatus.Success) {
+        setDids(payload);
+        if (payload.length > 0) {
+          setdidForMediation(payload[0].did);
+          console.log('Recipient DID set to first DID:', payload[0].did);
+        } else {
+          setdidForMediation(null);
+          console.log('No DIDs found');
+        }
+        setErrorMessage(null);
+      } else {
+        setErrorMessage('An error occurred while fetching DIDs');
+        console.log('DID fetch error:', status);
       }
     };
 
@@ -147,20 +185,26 @@ const ChatPage: React.FC = () => {
 
   // message-pickup
   useEffect(() => {
-    if (!messagePickup || !contactDID || !selectedDID) return;
+    if (!messagePickup || !contactDID || !didForMediation || !messagingDID)
+      return;
 
     const checkAndSyncMessages = async () => {
       try {
         const messageCount = await messagePickup.processStatusRequest(
           mediatorDid,
-          selectedDID,
+          didForMediation,
         );
         console.log('Mediator DID:', mediatorDid);
         console.log('Message count:', messageCount);
-        console.log('selectedDID:', selectedDID);
+        console.log('messagingDID:', messagingDID);
+        console.log('didForMediation:', didForMediation);
 
         if (messageCount > 0) {
-          await messagePickup.processDeliveryRequest(mediatorDid, selectedDID);
+          await messagePickup.processDeliveryRequest(
+            mediatorDid,
+            didForMediation,
+            messagingDID,
+          );
           messageService.getAllMessagesByContact(contactDID);
         }
       } catch (error) {
@@ -172,7 +216,14 @@ const ChatPage: React.FC = () => {
     checkAndSyncMessages();
     const intervalId = setInterval(checkAndSyncMessages, 5000);
     return () => clearInterval(intervalId);
-  }, [messagePickup, mediatorDid, contactDID, messageService, selectedDID]);
+  }, [
+    messagePickup,
+    mediatorDid,
+    contactDID,
+    messageService,
+    messagingDID,
+    didForMediation,
+  ]);
 
   // fetch contact details
   useEffect(() => {
@@ -279,7 +330,7 @@ const ChatPage: React.FC = () => {
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !messageRouter) return;
 
-    if (!selectedDID) {
+    if (!messagingDID) {
       setIsModalOpen(true); // Open modal to get the user's DID for sending
       return;
     }
@@ -289,7 +340,7 @@ const ChatPage: React.FC = () => {
       await messageRouter.routeForwardMessage(
         newMessage,
         contactDID,
-        selectedDID,
+        messagingDID,
       );
       setNewMessage('');
     } catch (error) {
@@ -300,7 +351,7 @@ const ChatPage: React.FC = () => {
   // Handle modal submission
   const handleModalSubmit = () => {
     if (userDID.trim() !== '') {
-      setSelectedDID(userDID);
+      setMessagingDID(userDID);
       localStorage.setItem('selectedDID', userDID);
       setUserDID('');
       setIsModalOpen(false);
