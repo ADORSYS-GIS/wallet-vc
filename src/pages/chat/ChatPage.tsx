@@ -7,7 +7,9 @@ import { eventBus } from '@adorsys-gis/event-bus';
 import {
   DidRepository,
   SecurityService,
-} from '@adorsys-gis/multiple-did-identities';
+  DIDIdentityService,
+  DidEventChannel,
+} from 'multiple-did-identities';
 import {
   ServiceResponse,
   ServiceResponseStatus,
@@ -28,7 +30,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { MessageRouter } from '@adorsys-gis/message-exchange';
+import { MessageRouter } from 'message-exchange';
 import {
   Message,
   MessageEventChannel,
@@ -38,6 +40,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { MessagePickup } from 'message-pickup';
+import { Identity } from '../../types/Identity';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -47,9 +50,7 @@ const ChatPage: React.FC = () => {
   const [contactDID, setContactDID] = useState<string>('');
   const [userDID, setUserDID] = useState<string>(''); // State to store user DID
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedDID, setSelectedDID] = useState<string | null>(
-    localStorage.getItem('selectedDID') || null,
-  ); // The DID to use for sending
+  const [selectedDID, setSelectedDID] = useState<string | null>(); // The DID to use for sending
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   // Get user PIN as it's needed to instantiate the message-exchange library
@@ -61,6 +62,7 @@ const ChatPage: React.FC = () => {
     }
   }, []);
 
+  const [, setDids] = useState<Identity[]>([]);
   const handleOpenModal = () => setIsModalOpen(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
@@ -77,7 +79,7 @@ const ChatPage: React.FC = () => {
       return new MessageRouter(
         new DidRepository(new SecurityService()),
         new MessageRepository(),
-        secretPinNumber,
+        secretPinNumber as number,
       );
     }
     return null; // Return null if PIN is not set
@@ -95,17 +97,57 @@ const ChatPage: React.FC = () => {
     if (secretPinNumber !== null) {
       return new MessagePickup(
         didRepository,
-        secretPinNumber,
+        secretPinNumber!,
         messageRepository,
       );
     }
     return null;
   }, [didRepository, secretPinNumber, messageRepository]);
 
-  const mediatorDid = 'did:example:mediator'; // Replace with your actual mediator DID
+  // Retrieve mediatorDid from local storage
+  const storedMediatorDid = localStorage.getItem('mediatorDid');
+  // Throw an error if mediatorDid is null
+  if (storedMediatorDid === null) {
+    throw new Error('mediatorDid is not set in local storage');
+  }
+  const mediatorDid: string = storedMediatorDid;
+  const securityService = new SecurityService();
+  const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
+  // get and set selectedDID for sending messages (first DID generated for the mediation request)
   useEffect(() => {
-    if (!messagePickup || !selectedDID || !contactDID) return;
+    const handleDIDResponse = ({
+      status,
+      payload,
+    }: {
+      status: ServiceResponseStatus;
+      payload: { did: string }[];
+    }) => {
+      if (status === ServiceResponseStatus.Success) {
+        setDids(payload);
+        if (payload.length > 0) {
+          setSelectedDID(payload[0].did); // get the first DID
+        }
+        setErrorMessage(null);
+      } else {
+        setErrorMessage('An error occurred while fetching DIDs');
+      }
+    };
+
+    eventBus.on(DidEventChannel.GetMediatorDidIdentities, handleDIDResponse);
+    didIdentityService.findMediatorDidIdentities();
+
+    return () => {
+      eventBus.off(
+        DidEventChannel.GetPeerContactDidIdentities,
+        handleDIDResponse,
+      );
+    };
+  }, []);
+
+  // message-pickup
+  useEffect(() => {
+    if (!messagePickup || !contactDID || !selectedDID) return;
 
     const checkAndSyncMessages = async () => {
       try {
@@ -113,6 +155,10 @@ const ChatPage: React.FC = () => {
           mediatorDid,
           selectedDID,
         );
+        console.log('Mediator DID:', mediatorDid);
+        console.log('Message count:', messageCount);
+        console.log('selectedDID:', selectedDID);
+
         if (messageCount > 0) {
           await messagePickup.processDeliveryRequest(mediatorDid, selectedDID);
           messageService.getAllMessagesByContact(contactDID);
@@ -126,8 +172,9 @@ const ChatPage: React.FC = () => {
     checkAndSyncMessages();
     const intervalId = setInterval(checkAndSyncMessages, 5000);
     return () => clearInterval(intervalId);
-  }, [messagePickup, selectedDID, mediatorDid, contactDID, messageService]);
+  }, [messagePickup, mediatorDid, contactDID, messageService, selectedDID]);
 
+  // fetch contact details
   useEffect(() => {
     const fetchContactDetails = async () => {
       if (contactId) {
@@ -228,12 +275,12 @@ const ChatPage: React.FC = () => {
     };
   }, []);
 
-  // This should contain the logic to handle messages when the send button is clicked
+  // logic to handle messages when the send button is clicked
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !messageRouter) return;
 
     if (!selectedDID) {
-      setIsModalOpen(true); // Open modal to get the user's DID
+      setIsModalOpen(true); // Open modal to get the user's DID for sending
       return;
     }
 

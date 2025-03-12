@@ -1,10 +1,10 @@
 import { eventBus } from '@adorsys-gis/event-bus';
+import { ServiceResponseStatus } from '@adorsys-gis/status-service';
 import {
   DIDIdentityService,
   DidEventChannel,
   SecurityService,
-} from '@adorsys-gis/multiple-did-identities';
-import { ServiceResponseStatus } from '@adorsys-gis/status-service';
+} from 'multiple-did-identities';
 import { useEffect, useState } from 'react';
 import ShareIdentity from '../../components/identity/ShareIdentity';
 import { Identity } from '../../types/Identity';

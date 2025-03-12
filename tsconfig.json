@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@adorsys-gis/multiple-did-identities": [
+        "./.yalc/multiple-did-identities"
+      ]
+    },
     "target": "es6",
     "types": ["node"],
     "lib": ["dom", "dom.iterable", "esnext"],

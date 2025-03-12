@@ -1,5 +1,3 @@
-import { DidService } from '@adorsys-gis/contact-exchange';
-import { SecurityService } from '@adorsys-gis/multiple-did-identities';
 import { QrScanner } from '@adorsys-gis/qr-scanner';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
@@ -11,8 +9,10 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { DidService } from 'contact-exchange';
 import { EventEmitter } from 'eventemitter3';
-import React, { useMemo, useState } from 'react';
+import { SecurityService } from 'multiple-did-identities';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ScanQRCodeProps {
@@ -28,12 +28,27 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
     theme.breakpoints.down('sm'),
   );
 
+  // Get user PIN as it's needed to instantiate the DIDService
+  const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
+  useEffect(() => {
+    const storedPin = localStorage.getItem('userPin');
+    if (storedPin) {
+      setSecretPinNumber(parseInt(storedPin, 10));
+    }
+  }, []);
+
   const eventBus = useMemo(() => new EventEmitter(), []);
   const securityService = useMemo(() => new SecurityService(), []);
-  const didService = useMemo(
-    () => new DidService(eventBus, securityService),
-    [eventBus, securityService],
-  );
+  const didService = useMemo(() => {
+    if (secretPinNumber === null) {
+      return null;
+    }
+    return new DidService(eventBus, securityService, secretPinNumber);
+  }, [eventBus, securityService, secretPinNumber]);
+
+  if (!didService) {
+    return <Typography>Loading PIN...</Typography>;
+  }
 
   const handleScan = async (data: string) => {
     setError(null);
