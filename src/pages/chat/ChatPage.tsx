@@ -36,7 +36,7 @@ import {
   MessageEventChannel,
   MessageRepository,
   MessageService,
-} from '@adorsys-gis/message-service';
+} from 'message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { MessagePickup } from 'message-pickup';
@@ -146,8 +146,7 @@ const ChatPage: React.FC = () => {
     };
   }, []);
 
-  // FIRST DID TEST
-  // get did for unpacking packed messages from mediator
+  // get and set mediation DID
   useEffect(() => {
     const handleDIDResponse = ({
       status,
@@ -160,10 +159,8 @@ const ChatPage: React.FC = () => {
         setDids(payload);
         if (payload.length > 0) {
           setdidForMediation(payload[0].did);
-          console.log('Recipient DID set to first DID:', payload[0].did);
         } else {
           setdidForMediation(null);
-          console.log('No DIDs found');
         }
         setErrorMessage(null);
       } else {
@@ -182,48 +179,6 @@ const ChatPage: React.FC = () => {
       );
     };
   }, []);
-
-  // message-pickup
-  useEffect(() => {
-    if (!messagePickup || !contactDID || !didForMediation || !messagingDID)
-      return;
-
-    const checkAndSyncMessages = async () => {
-      try {
-        const messageCount = await messagePickup.processStatusRequest(
-          mediatorDid,
-          didForMediation,
-        );
-        console.log('Mediator DID:', mediatorDid);
-        console.log('Message count:', messageCount);
-        console.log('messagingDID:', messagingDID);
-        console.log('didForMediation:', didForMediation);
-
-        if (messageCount > 0) {
-          await messagePickup.processDeliveryRequest(
-            mediatorDid,
-            didForMediation,
-            messagingDID,
-          );
-          messageService.getAllMessagesByContact(contactDID);
-        }
-      } catch (error) {
-        console.error('Error checking or syncing messages:', error);
-        setErrorMessage('Failed to check or sync messages from mediator.');
-      }
-    };
-
-    checkAndSyncMessages();
-    const intervalId = setInterval(checkAndSyncMessages, 5000);
-    return () => clearInterval(intervalId);
-  }, [
-    messagePickup,
-    mediatorDid,
-    contactDID,
-    messageService,
-    messagingDID,
-    didForMediation,
-  ]);
 
   // fetch contact details
   useEffect(() => {
@@ -259,6 +214,72 @@ const ChatPage: React.FC = () => {
     fetchContactDetails();
   }, [contactId, contactService]);
 
+  // message-exchnage
+  const handleSendMessage = async () => {
+    if (newMessage.trim() === '' || !messageRouter) return;
+
+    if (!messagingDID) {
+      setIsModalOpen(true); // Open modal to get the user's DID for sending
+      return;
+    }
+
+    // Send the message using MessageRouter
+    try {
+      await messageRouter.routeForwardMessage(
+        newMessage,
+        contactDID,
+        messagingDID,
+      );
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  // message-pickup
+  useEffect(() => {
+    if (!messagePickup || !contactDID || !didForMediation || !messagingDID)
+      return;
+
+    const checkAndSyncMessages = async () => {
+      try {
+        const messageCount = await messagePickup.processStatusRequest(
+          mediatorDid,
+          didForMediation,
+        );
+
+        console.log('Message count:', messageCount);
+        console.log('Mediator DID:', mediatorDid);
+        console.log('messagingDID:', messagingDID);
+        console.log('didForMediation:', didForMediation);
+
+        if (messageCount > 0) {
+          await messagePickup.processDeliveryRequest(
+            mediatorDid,
+            didForMediation,
+            messagingDID,
+          );
+          messageService.getAllMessagesByContact(contactDID);
+        }
+      } catch (error) {
+        console.error('Error checking or syncing messages:', error);
+        setErrorMessage('Failed to check or sync messages from mediator.');
+      }
+    };
+
+    checkAndSyncMessages();
+    const intervalId = setInterval(checkAndSyncMessages, 5000);
+    return () => clearInterval(intervalId);
+  }, [
+    messagePickup,
+    mediatorDid,
+    contactDID,
+    messageService,
+    messagingDID,
+    didForMediation,
+  ]);
+
+  // Get all messages for a given contact in your
   useEffect(() => {
     const fetchMessages = async () => {
       if (contactId) {
@@ -325,28 +346,6 @@ const ChatPage: React.FC = () => {
       eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
     };
   }, []);
-
-  // logic to handle messages when the send button is clicked
-  const handleSendMessage = async () => {
-    if (newMessage.trim() === '' || !messageRouter) return;
-
-    if (!messagingDID) {
-      setIsModalOpen(true); // Open modal to get the user's DID for sending
-      return;
-    }
-
-    // Send the message using MessageRouter
-    try {
-      await messageRouter.routeForwardMessage(
-        newMessage,
-        contactDID,
-        messagingDID,
-      );
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
 
   // Handle modal submission
   const handleModalSubmit = () => {

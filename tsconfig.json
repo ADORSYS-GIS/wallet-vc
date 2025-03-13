@@ -2,9 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@adorsys-gis/multiple-did-identities": [
-        "./.yalc/multiple-did-identities"
-      ]
+      "@adorsys-gis/multiple-did-identities": ["./.yalc/multiple-did-identities"],
+      "@adorsys-gis/message-service": ["./.yalc/message-service"],
     },
     "target": "es6",
     "types": ["node"],

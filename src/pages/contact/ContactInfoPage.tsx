@@ -4,10 +4,7 @@ import {
   ContactService,
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
-import {
-  MessageEventChannel,
-  MessageService,
-} from '@adorsys-gis/message-service';
+import { MessageEventChannel, MessageService } from 'message-service';
 import {
   ServiceResponse,
   ServiceResponseStatus,
