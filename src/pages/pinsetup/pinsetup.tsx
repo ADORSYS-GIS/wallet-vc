@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { registerUser, authenticateUser, storePin } from '../../utils/auth';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -21,19 +22,48 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const isPinValid = pin.length === 6;
   const isConfirmValid = confirmPin.length === 6 && pin === confirmPin;
   const isFormValid = isPinValid && isConfirmValid;
 
-  const handleSubmit = () => {
-    if (isFormValid) {
-      localStorage.setItem('userPin', pin);
-      onComplete(pin);
-      navigate('/login');
-    } else {
+  const handleSubmit = async () => {
+    if (!isFormValid) {
       setConfirmError('PINs do not match');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('Starting WebAuthn registration...');
+      await registerUser();
+      console.log('Registration complete. Starting authentication...');
+
+      await authenticateUser();
+      console.log('Authentication complete. Storing PIN...');
+
+      await storePin(pin);
+      console.log('PIN stored successfully. Checking localStorage...');
+
+      // Verify storage (optional debug)
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      console.log('Stored messages:', messages);
+
+      onComplete(pin);
+      console.log('onComplete called.');
+
+      console.log('Navigating to /login...');
+      navigate('/login');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to set up PIN: ${errorMessage}`);
+      console.error('Pin setup error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,11 +185,13 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
           }}
         />
 
+        <div id="messageList" style={{ display: 'none' }}></div>
+
         <Button
           onClick={handleSubmit}
           variant="contained"
           fullWidth
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
           sx={{
             padding: '12px',
             fontSize: '16px',
@@ -171,7 +203,7 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
             '&:hover': { backgroundColor: isFormValid ? '#0056b3' : '#ccc' },
           }}
         >
-          Set PIN
+          {isLoading ? 'Setting Up...' : 'Set PIN'}
         </Button>
       </Box>
     </Box>
