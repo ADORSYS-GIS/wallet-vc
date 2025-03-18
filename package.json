@@ -33,6 +33,7 @@
     "snackbar": "^1.1.0",
     "typescript": "^4.9.5",
     "uuid": "^11.0.3",
+    "web-auth-prf": "file:.yalc/web-auth-prf",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

@@ -31,7 +31,10 @@ function App() {
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
 
-  const hasSetPin: boolean = localStorage.getItem('userPin') !== null;
+  // Check for encrypted PIN in "messages" instead of "userPin"
+  const hasSetPin: boolean =
+    localStorage.getItem('messages') !== null &&
+    JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
 
   const [isLoggedIn, setIsLoggedIn] = useState(
     sessionStorage.getItem('isLoggedIn') === 'true',
@@ -86,6 +89,11 @@ function App() {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
+    // Optionally clear WebAuthn-related data on logout
+    localStorage.removeItem('credentialId');
+    localStorage.removeItem('registrationSalt');
+    localStorage.removeItem('messages');
+    localStorage.removeItem('userPin'); // Clean up old PIN if present
     navigate('/login'); // Navigate to login on logout
   };
 
@@ -122,8 +130,8 @@ function App() {
               path="/setup-pin"
               element={
                 <PinSetupPage
-                  onComplete={(pin: string) => {
-                    localStorage.setItem('userPin', pin);
+                  onComplete={() => {
+                    // No longer store userPin here; rely on WebAuthn storage
                     navigate('/login', { replace: true }); // Navigate to login after setting PIN
                   }}
                 />
@@ -141,11 +149,11 @@ function App() {
               element={
                 <PinLoginPage
                   onLogin={handleLogin}
-                  requiredPin={localStorage.getItem('userPin') || ''}
+                  requiredPin="" // We'll update PinLoginPage to decrypt from "messages"
                 />
               }
             />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Navigate to="/login" />} />
           </>
         )}
 
@@ -175,7 +183,7 @@ function App() {
                       element={<ContactInfoPage />}
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
-                    <Route path="/Success" element={<SuccessPage />} />
+                    <Route path="/success" element={<SuccessPage />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />
