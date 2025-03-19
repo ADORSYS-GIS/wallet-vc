@@ -1,3 +1,5 @@
+import { DidService } from '@adorsys-gis/contact-exchange';
+import { SecurityService } from '@adorsys-gis/multiple-did-identities';
 import { QrScanner } from '@adorsys-gis/qr-scanner';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
@@ -9,9 +11,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { DidService } from 'contact-exchange';
 import { EventEmitter } from 'eventemitter3';
-import { SecurityService } from 'multiple-did-identities';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

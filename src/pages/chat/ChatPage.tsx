@@ -5,11 +5,11 @@ import {
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
 import {
-  DidRepository,
-  SecurityService,
   DIDIdentityService,
   DidEventChannel,
-} from 'multiple-did-identities';
+  DidRepository,
+  SecurityService,
+} from '@adorsys-gis/multiple-did-identities';
 import {
   ServiceResponse,
   ServiceResponseStatus,
@@ -30,16 +30,16 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { MessageRouter } from 'message-exchange';
+import { MessageRouter } from '@adorsys-gis/message-exchange';
+import { MessagePickup } from '@adorsys-gis/message-pickup';
 import {
   Message,
   MessageEventChannel,
   MessageRepository,
   MessageService,
-} from 'message-service';
+} from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { MessagePickup } from 'message-pickup';
 import { Identity } from '../../types/Identity';
 
 const ChatPage: React.FC = () => {
@@ -247,11 +247,6 @@ const ChatPage: React.FC = () => {
           mediatorDid,
           didForMediation,
         );
-
-        console.log('Message count:', messageCount);
-        console.log('Mediator DID:', mediatorDid);
-        console.log('messagingDID:', messagingDID);
-        console.log('didForMediation:', didForMediation);
 
         if (messageCount > 0) {
           await messagePickup.processDeliveryRequest(
