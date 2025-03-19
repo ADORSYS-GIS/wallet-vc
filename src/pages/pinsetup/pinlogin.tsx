@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateUser, getPin } from '../../utils/auth'; // Import auth utilities
+import { authenticateUser, getPin } from '../../utils/auth';
 
 interface PinLoginPageProps {
   onLogin: () => void;
@@ -19,7 +19,7 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
   const [inputPin, setInputPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
@@ -33,7 +33,6 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
 
     try {
       const messages = await authenticateUser();
-      console.log('Messages received in PinLoginPage:', messages);
       const storedPin = getPin(messages);
 
       if (!storedPin) {
@@ -45,9 +44,11 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
         setError('Invalid PIN. Please try again.');
         return;
       }
+
       setError(null);
       onLogin();
       navigate('/');
+      setInputPin('');
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Authentication failed';

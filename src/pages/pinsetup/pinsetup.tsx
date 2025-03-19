@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerUser, authenticateUser, storePin } from '../../utils/auth';
+import { authenticateUser, registerUser, storePin } from '../../utils/auth';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -47,16 +47,10 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
       console.log('Authentication complete. Storing PIN...');
 
       await storePin(pin);
-      console.log('PIN stored successfully. Checking localStorage...');
-
-      // Verify storage (optional debug)
-      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-      console.log('Stored messages:', messages);
+      console.log('PIN stored successfully');
 
       onComplete(pin);
-      console.log('onComplete called.');
 
-      console.log('Navigating to /login...');
       navigate('/login');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
