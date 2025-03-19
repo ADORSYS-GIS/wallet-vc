@@ -9,9 +9,6 @@ import Navbar from './components/layout/Navbar';
 import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
-import SettingsPage from './pages/SettingsPage';
-import SuccessPage from './pages/SuccessPage';
-import Wallet from './pages/Wallet';
 import ChatPage from './pages/chat/ChatPage';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
@@ -20,6 +17,9 @@ import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
+import SettingsPage from './pages/SettingsPage';
+import SuccessPage from './pages/SuccessPage';
+import Wallet from './pages/Wallet';
 
 // Create the theme for the app
 const theme = createTheme();
@@ -36,11 +36,26 @@ function App() {
     localStorage.getItem('messages') !== null &&
     JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
 
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    sessionStorage.getItem('isLoggedIn') === 'true',
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
+    const sessionStart = parseInt(
+      sessionStorage.getItem('sessionStart') || '0',
+      10,
+    );
+    const currentTime = Date.now();
+    const sessionTimeout = 30 * 60 * 1000;
+    return loggedInState && currentTime - sessionStart < sessionTimeout;
+  });
 
-  const sessionTimeout = 30 * 60 * 1000;
+  // Sync isLoggedIn with sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('isLoggedIn', isLoggedIn.toString());
+    if (isLoggedIn) {
+      sessionStorage.setItem('sessionStart', Date.now().toString());
+    } else {
+      sessionStorage.removeItem('sessionStart');
+    }
+  }, [isLoggedIn]);
 
   // Reset session start time on user interaction
   useEffect(() => {
@@ -62,39 +77,36 @@ function App() {
     };
   }, [isLoggedIn]);
 
-  // Check session status on load and handle session expiration
+  // Check session status and handle expiration
   useEffect(() => {
-    const sessionStart = parseInt(
-      sessionStorage.getItem('sessionStart') || '0',
-      10,
-    );
-    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
-    const currentTime = Date.now();
+    const checkSession = () => {
+      const sessionStart = parseInt(
+        sessionStorage.getItem('sessionStart') || '0',
+        10,
+      );
+      const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
+      const currentTime = Date.now();
+      const sessionTimeout = 30 * 60 * 1000;
 
-    if (loggedInState && currentTime - sessionStart < sessionTimeout) {
-      setIsLoggedIn(true);
-    } else {
-      handleLogout();
-    }
+      if (loggedInState && currentTime - sessionStart >= sessionTimeout) {
+        handleLogout();
+      }
+    };
+
+    const interval = setInterval(checkSession, 1000); // Check every second
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
-    sessionStorage.setItem('isLoggedIn', 'true');
-    sessionStorage.setItem('sessionStart', Date.now().toString());
-    navigate('/'); // Navigate to home after login
+    navigate('/');
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
-    // Optionally clear WebAuthn-related data on logout
-    localStorage.removeItem('credentialId');
-    localStorage.removeItem('registrationSalt');
-    localStorage.removeItem('messages');
-    localStorage.removeItem('userPin'); // Clean up old PIN if present
-    navigate('/login'); // Navigate to login on logout
+    navigate('/login', { replace: true }); // Navigate to login on logout
   };
 
   // Log the current PWA state
@@ -103,6 +115,7 @@ function App() {
     isInstalled,
     isInstalling,
     iOS,
+    isLoggedIn,
   });
 
   return (
@@ -116,7 +129,7 @@ function App() {
               <OnboardingSlides
                 onComplete={() => {
                   localStorage.setItem('onboardingComplete', 'true');
-                  navigate('/setup-pin'); // Navigate to PIN setup after onboarding
+                  navigate('/setup-pin');
                 }}
               />
             }
@@ -131,13 +144,12 @@ function App() {
               element={
                 <PinSetupPage
                   onComplete={() => {
-                    // No longer store userPin here; rely on WebAuthn storage
-                    navigate('/login', { replace: true }); // Navigate to login after setting PIN
+                    navigate('/login', { replace: true });
                   }}
                 />
               }
             />
-            <Route path="*" element={<Navigate to="/setup-pin" />} />
+            <Route path="*" element={<Navigate to="/setup-pin" replace />} />
           </>
         )}
 
@@ -146,14 +158,9 @@ function App() {
           <>
             <Route
               path="/login"
-              element={
-                <PinLoginPage
-                  onLogin={handleLogin}
-                  requiredPin="" // We'll update PinLoginPage to decrypt from "messages"
-                />
-              }
+              element={<PinLoginPage onLogin={handleLogin} />}
             />
-            <Route path="*" element={<Navigate to="/login" />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         )}
 
@@ -184,6 +191,7 @@ function App() {
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
                     <Route path="/success" element={<SuccessPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />
