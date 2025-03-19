@@ -2,8 +2,7 @@ import {
   handleRegister,
   handleAuthenticate,
   saveMessage,
-  handleLogout,
-} from 'web-auth-prf';
+} from '@adorsys-gis/web-auth-prf';
 
 // Register user with WebAuthn
 export async function registerUser() {
@@ -21,7 +20,6 @@ export async function registerUser() {
 export async function authenticateUser(): Promise<string[] | undefined> {
   try {
     const decryptedMessages = await handleAuthenticate();
-    console.log('Raw result from handleAuthenticate:', decryptedMessages);
 
     if (!Array.isArray(decryptedMessages)) {
       console.warn(
@@ -29,11 +27,6 @@ export async function authenticateUser(): Promise<string[] | undefined> {
       );
       return [];
     }
-
-    console.log(
-      'Decrypted messages from authenticateUser (before return):',
-      decryptedMessages,
-    );
     return decryptedMessages;
   } catch (error) {
     console.error('Authentication failed:', error);
@@ -42,12 +35,11 @@ export async function authenticateUser(): Promise<string[] | undefined> {
 }
 
 export function getPin(messages: string[] | undefined): string | null {
-  console.log('getPin input:', messages);
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     console.warn('No valid messages found for PIN extraction');
     return null;
   }
-  return messages[0]; // Extract the first message as the PIN
+  return messages[0]; // Extract the first message which is the PIN
 }
 
 // Store encrypted PIN
@@ -64,17 +56,6 @@ export async function storePin(pin: string) {
     console.log('PIN encrypted and stored');
   } catch (error) {
     console.error('Failed to store PIN:', error);
-    throw error;
-  }
-}
-
-// Logout
-export async function logoutUser() {
-  try {
-    handleLogout(); // Note: Currently doesn’t clear storage
-    console.log('User logged out');
-  } catch (error) {
-    console.error('Logout failed:', error);
     throw error;
   }
 }
