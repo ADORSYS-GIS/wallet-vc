@@ -21,7 +21,6 @@ import SettingsPage from './pages/SettingsPage';
 import SuccessPage from './pages/SuccessPage';
 import Wallet from './pages/Wallet';
 
-// Create the theme for the app
 const theme = createTheme();
 
 function App() {
@@ -31,7 +30,6 @@ function App() {
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
 
-  // Check for encrypted PIN in "messages" instead of "userPin"
   const hasSetPin: boolean =
     localStorage.getItem('messages') !== null &&
     JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
@@ -47,7 +45,6 @@ function App() {
     return loggedInState && currentTime - sessionStart < sessionTimeout;
   });
 
-  // Sync isLoggedIn with sessionStorage
   useEffect(() => {
     sessionStorage.setItem('isLoggedIn', isLoggedIn.toString());
     if (isLoggedIn) {
@@ -57,7 +54,6 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  // Reset session start time on user interaction
   useEffect(() => {
     const resetSessionTimeout = () => {
       if (isLoggedIn) {
@@ -77,7 +73,6 @@ function App() {
     };
   }, [isLoggedIn]);
 
-  // Check session status and handle expiration
   useEffect(() => {
     const checkSession = () => {
       const sessionStart = parseInt(
@@ -93,7 +88,7 @@ function App() {
       }
     };
 
-    const interval = setInterval(checkSession, 1000); // Check every second
+    const interval = setInterval(checkSession, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -106,10 +101,9 @@ function App() {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
-    navigate('/login', { replace: true }); // Navigate to login on logout
+    navigate('/login', { replace: true });
   };
 
-  // Log the current PWA state
   console.log({
     isInstallable,
     isInstalled,
