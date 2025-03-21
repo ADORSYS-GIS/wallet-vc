@@ -39,7 +39,7 @@ export function getPin(messages: string[] | undefined): string | null {
     console.warn('No valid messages found for PIN extraction');
     return null;
   }
-  return messages[0]; // Extract the first message which is the PIN
+  return messages[0];
 }
 
 // Store encrypted PIN
