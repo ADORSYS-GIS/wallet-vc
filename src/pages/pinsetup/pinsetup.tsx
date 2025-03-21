@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateUser, registerUser, storePin } from '../../utils/auth';
+import { registerUser, storePin } from '../../utils/auth';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -42,9 +42,6 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
       console.log('Starting WebAuthn registration...');
       await registerUser();
       console.log('Registration complete. Starting authentication...');
-
-      await authenticateUser();
-      console.log('Authentication complete. Storing PIN...');
 
       await storePin(pin);
       console.log('PIN stored successfully');
