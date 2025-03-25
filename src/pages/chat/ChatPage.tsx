@@ -31,7 +31,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { MessageRouter } from '@adorsys-gis/message-exchange';
-import { MessagePickup } from 'message-pickup';
+import { MessagePickup } from '@adorsys-gis/message-pickup';
 import {
   Message,
   MessageEventChannel,

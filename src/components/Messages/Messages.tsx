@@ -4,7 +4,7 @@ import {
   ContactService,
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
-import { MessagePickup } from 'message-pickup';
+import { MessagePickup } from '@adorsys-gis/message-pickup';
 import {
   Message,
   MessageEventChannel,
