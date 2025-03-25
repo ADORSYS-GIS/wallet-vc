@@ -23,6 +23,7 @@
     "@types/react-router-dom": "^5.3.3",
     "buffer": "^6.0.3",
     "framer-motion": "^12.5.0",
+    "message-pickup": "file:.yalc/message-pickup",
     "process": "^0.11.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

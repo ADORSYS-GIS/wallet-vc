@@ -31,7 +31,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { MessageRouter } from '@adorsys-gis/message-exchange';
-import { MessagePickup } from '@adorsys-gis/message-pickup';
+import { MessagePickup } from 'message-pickup';
 import {
   Message,
   MessageEventChannel,
@@ -247,6 +247,8 @@ const ChatPage: React.FC = () => {
           mediatorDid,
           didForMediation,
         );
+
+        console.log(`Mediator reports ${messageCount} messages in queue`);
 
         if (messageCount > 0) {
           await messagePickup.processDeliveryRequest(
@@ -486,8 +488,8 @@ const ChatPage: React.FC = () => {
               marginBottom: 1,
               alignSelf: msg.direction === 'out' ? 'flex-end' : 'flex-start',
               backgroundColor:
-                msg.contactId === 'out' ? 'lightgrey' : 'lightgrey',
-              color: msg.contactId === 'out' ? 'black' : 'white',
+                msg.direction === 'out' ? '#58a3ff' : 'lightgrey',
+              color: msg.direction === 'out' ? '#fff' : '#000',
               borderRadius: 3,
               display: 'inline-block',
               maxWidth: '50%',
@@ -508,8 +510,7 @@ const ChatPage: React.FC = () => {
               sx={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                fontSize: '10',
-                color: 'grey',
+                color: msg.direction === 'out' ? '#fff' : '#000',
               }}
             >
               {msg.timestamp.toLocaleString()} {/* Format timestamp */}

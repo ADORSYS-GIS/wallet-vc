@@ -4,7 +4,7 @@ import {
   ContactService,
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
-import { MessagePickup } from '@adorsys-gis/message-pickup';
+import { MessagePickup } from 'message-pickup';
 import {
   Message,
   MessageEventChannel,
@@ -252,9 +252,6 @@ const Messages: React.FC = () => {
             );
             updatedUnread[contactDid] = newCount;
             processedMessages.add(messageKey);
-            console.log(
-              `Incremented unread count for ${contactDid} to ${newCount}`,
-            );
           }
         }
       }
