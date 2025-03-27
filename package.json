@@ -12,7 +12,7 @@
     "@adorsys-gis/qr-scanner": "^1.0.3",
     "@adorsys-gis/status-service": "^1.0.0",
     "@adorsys-gis/usepwa": "^1.0.2",
-    "@adorsys-gis/web-auth-prf": "^1.1.0",
+    "@adorsys-gis/web-auth-prf": "^1.1.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.3.1",
