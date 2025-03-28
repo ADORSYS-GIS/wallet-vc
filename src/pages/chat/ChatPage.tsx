@@ -29,7 +29,6 @@ import {
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
 import { MessageRouter } from '@adorsys-gis/message-exchange';
 import { MessagePickup } from '@adorsys-gis/message-pickup';
 import {
@@ -40,7 +39,7 @@ import {
 } from '@adorsys-gis/message-service';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Identity } from '../../types/Identity';
+import { UnreadStatusRepository } from '../../utils/UnreadStatusRepository';
 
 const ChatPage: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -48,23 +47,12 @@ const ChatPage: React.FC = () => {
 
   const [contactName, setContactName] = useState<string>('');
   const [contactDID, setContactDID] = useState<string>('');
-  const [userDID, setUserDID] = useState<string>(''); // State to store user DID
+  const [userDID, setUserDID] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [messagingDID, setMessagingDID] = useState<string | null>(); // The DID to use for sending
+  const [messagingDID, setMessagingDID] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [didForMediation, setdidForMediation] = useState<string | null>(null); // Mediator DID
-
-  // Get user PIN as it's needed to instantiate the message-exchange library
+  const [didForMediation, setDidForMediation] = useState<string | null>(null);
   const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
-  useEffect(() => {
-    const storedPin = localStorage.getItem('userPin');
-    if (storedPin) {
-      setSecretPinNumber(parseInt(storedPin, 10));
-    }
-  }, []);
-
-  const [, setDids] = useState<Identity[]>([]);
-  const handleOpenModal = () => setIsModalOpen(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,7 +60,12 @@ const ChatPage: React.FC = () => {
     [key: string]: boolean;
   }>({});
 
-  // Memoize service creation
+  // Add unread status repository
+  const unreadStatusRepository = useMemo(
+    () => new UnreadStatusRepository(),
+    [],
+  );
+
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
   const messageRouter = useMemo(() => {
@@ -83,17 +76,15 @@ const ChatPage: React.FC = () => {
         secretPinNumber as number,
       );
     }
-    return null; // Return null if PIN is not set
+    return null;
   }, [secretPinNumber]);
 
-  // Memoize repository creation
   const didRepository = useMemo(
     () => new DidRepository(new SecurityService()),
     [],
   );
   const messageRepository = useMemo(() => new MessageRepository(), []);
 
-  // Memoize MessagePickup creation
   const messagePickup = useMemo(() => {
     if (secretPinNumber !== null) {
       return new MessagePickup(
@@ -105,9 +96,7 @@ const ChatPage: React.FC = () => {
     return null;
   }, [didRepository, secretPinNumber, messageRepository]);
 
-  // Retrieve mediatorDid from local storage
   const storedMediatorDid = localStorage.getItem('mediatorDid');
-  // Throw an error if mediatorDid is null
   if (storedMediatorDid === null) {
     throw new Error('mediatorDid is not set in local storage');
   }
@@ -115,17 +104,19 @@ const ChatPage: React.FC = () => {
   const securityService = new SecurityService();
   const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
-  // get and set MessagingDID for sending messages
+  useEffect(() => {
+    const storedPin = localStorage.getItem('userPin');
+    if (storedPin) {
+      setSecretPinNumber(parseInt(storedPin, 10));
+    }
+  }, []);
+
   useEffect(() => {
     const handleDIDResponse = ({
       status,
       payload,
-    }: {
-      status: ServiceResponseStatus;
-      payload: { did: string }[];
-    }) => {
+    }: ServiceResponse<{ did: string }[]>) => {
       if (status === ServiceResponseStatus.Success) {
-        setDids(payload);
         if (payload.length > 0) {
           setMessagingDID(payload[0].did);
         }
@@ -146,26 +137,18 @@ const ChatPage: React.FC = () => {
     };
   }, []);
 
-  // get and set mediation DID
   useEffect(() => {
     const handleDIDResponse = ({
       status,
       payload,
-    }: {
-      status: ServiceResponseStatus;
-      payload: { did: string }[];
-    }) => {
+    }: ServiceResponse<{ did: string }[]>) => {
       if (status === ServiceResponseStatus.Success) {
-        setDids(payload);
         if (payload.length > 0) {
-          setdidForMediation(payload[0].did);
-        } else {
-          setdidForMediation(null);
+          setDidForMediation(payload[0].did);
         }
         setErrorMessage(null);
       } else {
         setErrorMessage('An error occurred while fetching DIDs');
-        console.log('DID fetch error:', status);
       }
     };
 
@@ -173,14 +156,10 @@ const ChatPage: React.FC = () => {
     didIdentityService.findMediatorDidIdentities();
 
     return () => {
-      eventBus.off(
-        DidEventChannel.GetPeerContactDidIdentities,
-        handleDIDResponse,
-      );
+      eventBus.off(DidEventChannel.GetMediatorDidIdentities, handleDIDResponse);
     };
   }, []);
 
-  // fetch contact details
   useEffect(() => {
     const fetchContactDetails = async () => {
       if (contactId) {
@@ -195,6 +174,8 @@ const ChatPage: React.FC = () => {
             setContactName(response.payload.name);
             setContactDID(response.payload.did);
             setErrorMessage(null);
+            // Reset unread count when entering chat
+            unreadStatusRepository.resetUnreadCount(response.payload.did);
           } else {
             setErrorMessage('Failed to fetch contact details.');
           }
@@ -212,18 +193,16 @@ const ChatPage: React.FC = () => {
     };
 
     fetchContactDetails();
-  }, [contactId, contactService]);
+  }, [contactId, contactService, unreadStatusRepository]);
 
-  // message-exchnage
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !messageRouter) return;
 
     if (!messagingDID) {
-      setIsModalOpen(true); // Open modal to get the user's DID for sending
+      setIsModalOpen(true);
       return;
     }
 
-    // Send the message using MessageRouter
     try {
       await messageRouter.routeForwardMessage(
         newMessage,
@@ -236,7 +215,6 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // message-pickup
   useEffect(() => {
     if (!messagePickup || !contactDID || !didForMediation || !messagingDID)
       return;
@@ -247,8 +225,6 @@ const ChatPage: React.FC = () => {
           mediatorDid,
           didForMediation,
         );
-
-        console.log(`Mediator reports ${messageCount} messages in queue`);
 
         if (messageCount > 0) {
           await messagePickup.processDeliveryRequest(
@@ -276,7 +252,6 @@ const ChatPage: React.FC = () => {
     didForMediation,
   ]);
 
-  // Get all messages for a given contact in your
   useEffect(() => {
     const fetchMessages = async () => {
       if (contactId) {
@@ -286,7 +261,9 @@ const ChatPage: React.FC = () => {
       }
     };
 
-    const handleMessagesReceived = (response: ServiceResponse<Message[]>) => {
+    const handleMessagesReceived = async (
+      response: ServiceResponse<Message[]>,
+    ) => {
       if (
         response.status === ServiceResponseStatus.Success &&
         response.payload
@@ -295,6 +272,18 @@ const ChatPage: React.FC = () => {
           (a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
+
+        // Check for new incoming messages and mark them as read
+        const newMessages = sortedMessages.filter(
+          (msg) =>
+            msg.direction === 'in' && !messages.some((m) => m.id === msg.id),
+        );
+
+        if (newMessages.length > 0 && contactDID) {
+          // Reset unread count when new messages are viewed
+          await unreadStatusRepository.resetUnreadCount(contactDID);
+        }
+
         setMessages(sortedMessages);
         setErrorMessage(null);
       } else {
@@ -305,20 +294,16 @@ const ChatPage: React.FC = () => {
     const getAllByContactIdChannel = MessageEventChannel.GetAllByContactId;
     eventBus.on(getAllByContactIdChannel, handleMessagesReceived);
 
-    // Fetch messages initially
     fetchMessages();
-
-    // Poll messages after 0.5 seconds
     const intervalId = setInterval(fetchMessages, 500);
 
     return () => {
       clearInterval(intervalId);
       eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
     };
-  }, [contactDID, contactId, messageService]);
+  }, [contactDID, contactId, messageService, unreadStatusRepository, messages]);
 
   useEffect(() => {
-    // Event listener for when a message is deleted
     const handleDeleteMessageEvent = (
       response: ServiceResponse<{ id: string }>,
     ) => {
@@ -337,14 +322,11 @@ const ChatPage: React.FC = () => {
 
     eventBus.on(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
 
-    // Cleanup event listeners on unmount
     return () => {
-      eventBus.off(MessageEventChannel.CreateMessage);
       eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
     };
   }, []);
 
-  // Handle modal submission
   const handleModalSubmit = () => {
     if (userDID.trim() !== '') {
       setMessagingDID(userDID);
@@ -355,7 +337,6 @@ const ChatPage: React.FC = () => {
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    // Delete the message without adding a new event listener
     messageService.deleteMessage(messageId);
   };
 
@@ -401,7 +382,6 @@ const ChatPage: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
 
-        {/* Centered Title */}
         <Box
           sx={{
             position: 'absolute',
@@ -417,10 +397,9 @@ const ChatPage: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Contact Info Dropdown */}
         <Box>
           <IconButton
-            onClick={(event) => setAnchorEl(event.currentTarget)} // Open dropdown
+            onClick={(event) => setAnchorEl(event.currentTarget)}
             aria-label="Contact Info"
             color="primary"
           >
@@ -439,20 +418,18 @@ const ChatPage: React.FC = () => {
               horizontal: 'right',
             }}
           >
-            {/* Navigate to Contact Info */}
             <MenuItem
               onClick={() => {
                 navigate(`/contact-info/${contactId}`);
-                setAnchorEl(null); // Close dropdown
+                setAnchorEl(null);
               }}
             >
               View Contact Info
             </MenuItem>
-            {/* Open Modal for Setting DID */}
             <MenuItem
               onClick={() => {
-                setAnchorEl(null); // Close dropdown
-                handleOpenModal(); // Open the modal
+                setAnchorEl(null);
+                setIsModalOpen(true);
               }}
             >
               Set/Change Sending DID
@@ -461,14 +438,12 @@ const ChatPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Display error message */}
       {errorMessage && (
         <Box sx={{ padding: 2, backgroundColor: 'red', color: 'white' }}>
           <Typography variant="body1">{errorMessage}</Typography>
         </Box>
       )}
 
-      {/* Messages */}
       <Box
         sx={{
           flexGrow: 1,
@@ -513,10 +488,9 @@ const ChatPage: React.FC = () => {
                 color: msg.direction === 'out' ? '#fff' : '#000',
               }}
             >
-              {msg.timestamp.toLocaleString()} {/* Format timestamp */}
+              {msg.timestamp.toLocaleString()}
             </Typography>
 
-            {/* Three dots for delete option */}
             <IconButton
               sx={{ position: 'absolute', top: 5, right: -30 }}
               onClick={() => handleClickDelete(msg.id)}
@@ -524,7 +498,6 @@ const ChatPage: React.FC = () => {
               <MoreVertIcon />
             </IconButton>
 
-            {/* Delete Option */}
             {deleteOptionsVisible[msg.id] && (
               <Box sx={{ position: 'absolute', top: 35, right: 5 }}>
                 <Button
@@ -546,7 +519,6 @@ const ChatPage: React.FC = () => {
         ))}
       </Box>
 
-      {/* Message Input */}
       <Box
         sx={{
           padding: 2,
@@ -571,14 +543,13 @@ const ChatPage: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Modal for selecting DID */}
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <Box
           sx={{
             position: 'absolute',
             top: '50%',
             left: '50%',
-            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' }, // Adjust for different screen sizes
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' },
             transform: 'translate(-50%, -50%)',
             bgcolor: 'rgba(255, 255, 255, 255)',
             boxShadow: 24,
@@ -606,7 +577,7 @@ const ChatPage: React.FC = () => {
             <Button
               variant="contained"
               onClick={handleModalSubmit}
-              disabled={!userDID.trim()} // Disable button if no DID is entered
+              disabled={!userDID.trim()}
             >
               OK
             </Button>
