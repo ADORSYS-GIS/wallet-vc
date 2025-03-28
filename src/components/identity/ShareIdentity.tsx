@@ -1,5 +1,5 @@
-import { Box, Typography } from '@mui/material';
-import React, { useState } from 'react';
+import { Box, Typography, Button } from '@mui/material';
+import React, { useState, useRef } from 'react';
 import { Identity } from '../../types/Identity';
 import QRCodeDisplay from './IdentityQRCodeDisplay';
 import IdentitySelector from './IdentitySelector';
@@ -18,10 +18,71 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({
   const [localSelectedDid, setLocalSelectedDid] = useState<string | null>(
     selectedDid,
   );
+  const qrCodeRef = useRef<HTMLDivElement>(null);
 
   const handleSelectChange = (did: string) => {
     setLocalSelectedDid(did);
     onDidSelect(did);
+  };
+
+  const handleDownloadQR = () => {
+    if (localSelectedDid && qrCodeRef.current) {
+      const svg = qrCodeRef.current.querySelector('svg');
+      if (svg) {
+        try {
+          // Get SVG data
+          const svgData = new XMLSerializer().serializeToString(svg);
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Define QR code size and frame width
+          const qrSize = 256; // Original QR code size
+          const frameWidth = 50; // Width of white frame on each side
+          const totalSize = qrSize + frameWidth * 2; // Total canvas size
+
+          // Set canvas size with frame
+          canvas.width = totalSize;
+          canvas.height = totalSize;
+
+          if (ctx) {
+            // Fill entire canvas with white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          const img = new Image();
+          const svgBlob = new Blob([svgData], {
+            type: 'image/svg+xml;charset=utf-8',
+          });
+          const url = URL.createObjectURL(svgBlob);
+
+          img.onload = () => {
+            if (ctx) {
+              // Draw the QR code in the center of the canvas
+              ctx.drawImage(img, frameWidth, frameWidth, qrSize, qrSize);
+              const image = canvas.toDataURL('image/png');
+
+              // Create download link
+              const link = document.createElement('a');
+              link.href = image;
+              link.download = `QRCode-${localSelectedDid.substring(0, 8)}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+
+              // Clean up
+              URL.revokeObjectURL(url);
+            }
+          };
+
+          img.src = url;
+        } catch (error) {
+          console.error('Error downloading QR code:', error);
+        }
+      } else {
+        console.error('No SVG found in QRCodeDisplay');
+      }
+    }
   };
 
   return (
@@ -32,7 +93,7 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({
         justifyContent: 'center',
         alignContent: 'center',
         padding: '24px',
-        bgcolor: '#F1F1F1',
+        bgcolor: 'f4f7fc',
         borderRadius: '10px',
         maxWidth: '400px',
         margin: '32px auto',
@@ -53,7 +114,26 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({
         selectedDid={localSelectedDid}
         onChange={handleSelectChange}
       />
-      {localSelectedDid && <QRCodeDisplay qrCode={localSelectedDid} />}
+      {localSelectedDid && (
+        <>
+          <div ref={qrCodeRef}>
+            <QRCodeDisplay qrCode={localSelectedDid} />
+          </div>
+          <Button
+            variant="contained"
+            onClick={handleDownloadQR}
+            sx={{
+              marginTop: '16px',
+              backgroundColor: '#6C6C6C',
+              '&:hover': {
+                backgroundColor: '#5A5A5A',
+              },
+            }}
+          >
+            Download QR Code
+          </Button>
+        </>
+      )}
     </Box>
   );
 };
