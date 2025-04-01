@@ -27,13 +27,23 @@ export class UnreadStatusRepository {
   }
 
   private waitForDB(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const timeoutDuration = 5000;
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Database wait timed out after 5 seconds'));
+      }, timeoutDuration);
+
       if (this.db) {
+        clearTimeout(timeoutId);
         resolve();
       } else {
         const checkDB = () => {
-          if (this.db) resolve();
-          else setTimeout(checkDB, 100);
+          if (this.db) {
+            clearTimeout(timeoutId);
+            resolve();
+          } else {
+            setTimeout(checkDB, 100);
+          }
         };
         checkDB();
       }

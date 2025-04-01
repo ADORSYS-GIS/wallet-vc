@@ -195,7 +195,8 @@ const Messages: React.FC = () => {
     };
 
     checkAndSyncMessages();
-    const intervalId = setInterval(checkAndSyncMessages, 5000);
+    const intreval = 5000;
+    const intervalId = setInterval(checkAndSyncMessages, intreval);
     return () => clearInterval(intervalId);
   }, [
     messagePickup,
@@ -314,109 +315,115 @@ const Messages: React.FC = () => {
         Messages
       </Typography>
 
-      {sortedContacts.map((contact) => {
-        const message = lastMessages[contact.did];
-        const unreadCount = unreadMessages[contact.did] || 0;
+      {sortedContacts.length > 0 ? (
+        sortedContacts.map((contact) => {
+          const message = lastMessages[contact.did];
+          const unreadCount = unreadMessages[contact.did] || 0;
 
-        return (
-          <Paper
-            key={contact.id}
-            onClick={() => openChat(contact.id)}
-            sx={{
-              padding: 2,
-              marginBottom: 2,
-              width: '90%',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderRadius: 2,
-              boxShadow: 2,
-              cursor: 'pointer',
-              '&:hover': { backgroundColor: '#f1f1f1' },
-            }}
-          >
-            {/* Contact Name, DID, and Last Message */}
-            <Box
+          return (
+            <Paper
+              key={contact.id}
+              onClick={() => openChat(contact.id)}
               sx={{
+                padding: 2,
+                marginBottom: 2,
+                width: '90%',
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                overflow: 'hidden',
-                flex: 1,
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
-              >
-                {contact.name}
-              </Typography>
-              <Tooltip title={contact.did} arrow>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#8A8A8A',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '250px',
-                  }}
-                >
-                  {contact.did}
-                </Typography>
-              </Tooltip>
-              {message && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#4A4A4A',
-                    marginTop: '4px',
-                  }}
-                >
-                  {message.text}
-                </Typography>
-              )}
-            </Box>
-
-            {/*Timestamp and Unread Count on the Same Line*/}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                justifyContent: 'flex-end',
-                minWidth: '170px',
+                borderRadius: 2,
+                boxShadow: 2,
+                cursor: 'pointer',
+                '&:hover': { backgroundColor: '#f1f1f1' },
               }}
             >
-              {message && (
+              {/* Contact Name, DID, and Last Message */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  overflow: 'hidden',
+                  flex: 1,
+                }}
+              >
                 <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#8A8A8A',
-                    marginRight: 2.5,
-                  }}
+                  variant="h6"
+                  sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
                 >
-                  {new Date(message.timestamp).toLocaleString()}
+                  {contact.name}
                 </Typography>
-              )}
-              {unreadCount > 0 && (
-                <Badge
-                  badgeContent={unreadCount}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      backgroundColor: '#1E90FF',
-                      color: 'white',
-                      fontSize: '0.75rem',
-                      height: '20px',
-                      borderRadius: '10px',
-                    },
-                  }}
-                />
-              )}
-            </Box>
-          </Paper>
-        );
-      })}
+                <Tooltip title={contact.did} arrow>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#8A8A8A',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '250px',
+                    }}
+                  >
+                    {contact.did}
+                  </Typography>
+                </Tooltip>
+                {message && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#4A4A4A',
+                      marginTop: '4px',
+                    }}
+                  >
+                    {message.text}
+                  </Typography>
+                )}
+              </Box>
+
+              {/*Timestamp and Unread Count on the Same Line*/}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  minWidth: '170px',
+                }}
+              >
+                {message && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#8A8A8A',
+                      marginRight: 2.5,
+                    }}
+                  >
+                    {new Date(message.timestamp).toLocaleString()}
+                  </Typography>
+                )}
+                {unreadCount > 0 && (
+                  <Badge
+                    badgeContent={unreadCount}
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        backgroundColor: '#1E90FF',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        height: '20px',
+                        borderRadius: '10px',
+                      },
+                    }}
+                  />
+                )}
+              </Box>
+            </Paper>
+          );
+        })
+      ) : (
+        <Typography variant="body1" sx={{ color: '#4A4A4A' }}>
+          No messages
+        </Typography>
+      )}
     </Box>
   );
 };

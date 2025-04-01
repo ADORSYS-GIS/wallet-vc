@@ -1,5 +1,5 @@
-import { Box, Typography, Button } from '@mui/material';
-import React, { useState, useRef } from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import React, { useRef, useState } from 'react';
 import { Identity } from '../../types/Identity';
 import QRCodeDisplay from './IdentityQRCodeDisplay';
 import IdentitySelector from './IdentitySelector';
@@ -18,6 +18,7 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({
   const [localSelectedDid, setLocalSelectedDid] = useState<string | null>(
     selectedDid,
   );
+
   const qrCodeRef = useRef<HTMLDivElement>(null);
 
   const handleSelectChange = (did: string) => {
@@ -36,9 +37,9 @@ const ShareIdentity: React.FC<ShareIdentityProps> = ({
           const ctx = canvas.getContext('2d');
 
           // Define QR code size and frame width
-          const qrSize = 256; // Original QR code size
-          const frameWidth = 50; // Width of white frame on each side
-          const totalSize = qrSize + frameWidth * 2; // Total canvas size
+          const qrSize = 256;
+          const frameWidth = 50;
+          const totalSize = qrSize + frameWidth * 2;
 
           // Set canvas size with frame
           canvas.width = totalSize;

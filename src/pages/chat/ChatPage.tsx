@@ -4,6 +4,14 @@ import {
   ContactService,
 } from '@adorsys-gis/contact-service';
 import { eventBus } from '@adorsys-gis/event-bus';
+import { MessageRouter } from '@adorsys-gis/message-exchange';
+import { MessagePickup } from '@adorsys-gis/message-pickup';
+import {
+  Message,
+  MessageEventChannel,
+  MessageRepository,
+  MessageService,
+} from '@adorsys-gis/message-service';
 import {
   DIDIdentityService,
   DidEventChannel,
@@ -15,7 +23,9 @@ import {
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   Box,
   Button,
@@ -29,16 +39,6 @@ import {
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MessageRouter } from '@adorsys-gis/message-exchange';
-import { MessagePickup } from '@adorsys-gis/message-pickup';
-import {
-  Message,
-  MessageEventChannel,
-  MessageRepository,
-  MessageService,
-} from '@adorsys-gis/message-service';
-import DeleteIcon from '@mui/icons-material/Delete';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { UnreadStatusRepository } from '../../utils/UnreadStatusRepository';
 
 const ChatPage: React.FC = () => {
