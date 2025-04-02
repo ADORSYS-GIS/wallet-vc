@@ -1,4 +1,0 @@
-node_modules
-
-# Project-specific paths to ignore
-/public/service-worker.js
