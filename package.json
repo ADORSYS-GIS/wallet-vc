@@ -7,6 +7,7 @@
     "@adorsys-gis/contact-exchange": "^1.0.7",
     "@adorsys-gis/contact-service": "^1.0.4",
     "@adorsys-gis/message-exchange": "^1.0.3",
+    "@adorsys-gis/message-pickup": "^1.0.2",
     "@adorsys-gis/message-service": "^1.0.3",
     "@adorsys-gis/multiple-did-identities": "^1.0.7",
     "@adorsys-gis/qr-scanner": "^1.0.3",
