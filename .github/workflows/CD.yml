@@ -1,32 +1,67 @@
-name: Publish Image & Deploy
+name: Build and Push Image to GHCR
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - v*.*.*
+
+env:
+  IMAGE_NAME: wallet-vc
 
 jobs:
-  push-and-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     permissions:
-      packages: write
       contents: read
+      packages: write
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Log in to GitHub Container Registry (GHCR)
+      - name: Set up Docker Buildx
+        id: builder
+        uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+          driver: docker-container
+          driver-opts: image=moby/buildkit:latest
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ github.ref_name }}
+
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🐳 Build and Push Docker image
-        uses: docker/build-push-action@v5
+      - name: Extract Metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Build Docker image and push to GHCR
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          builder: ${{ steps.builder.outputs.name }}
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          build-args: |
+            REACT_APP_VERIFIER_BASE_URL_BUILD=${{ secrets.REACT_APP_VERIFIER_BASE_URL_DEV }}
+            REACT_APP_PUBLIC_URL_BUILD=${{ secrets.REACT_APP_PUBLIC_URL_DEV }}
