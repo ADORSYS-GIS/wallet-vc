@@ -62,6 +62,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-          build-args: |
-            REACT_APP_VERIFIER_BASE_URL_BUILD=${{ secrets.REACT_APP_VERIFIER_BASE_URL_DEV }}
-            REACT_APP_PUBLIC_URL_BUILD=${{ secrets.REACT_APP_PUBLIC_URL_DEV }}
