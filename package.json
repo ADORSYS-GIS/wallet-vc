@@ -7,6 +7,7 @@
     "@adorsys-gis/contact-exchange": "^1.0.7",
     "@adorsys-gis/contact-service": "^1.0.4",
     "@adorsys-gis/message-exchange": "^1.0.3",
+    "@adorsys-gis/message-pickup": "^1.0.2",
     "@adorsys-gis/message-service": "^1.0.3",
     "@adorsys-gis/multiple-did-identities": "^1.0.7",
     "@adorsys-gis/qr-scanner": "^1.0.3",
@@ -42,6 +43,18 @@
     "format:check": "prettier --check .",
     "lint": "eslint src/** --ext .js,.jsx,.ts,.tsx --no-error-on-unmatched-pattern",
     "lint:fix": "eslint --fix src/** --ext .js,.jsx,.ts,.tsx --no-error-on-unmatched-pattern"
+  },
+  "overrides": {
+    "glob": "^11.0.1",
+    "rimraf": "^6.0.1",
+    "abab": "^2.0.5",
+    "jsdom": "^26.0.0",
+    "@jridgewell/sourcemap-codec": "^1.5.0",
+    "@surma/rollup-plugin-off-main-thread": "^2.2.3",
+    "magic-string": "^0.30.17",
+    "workbox-build": "^7.3.0",
+    "workbox-google-analytics": "^7.3.0",
+    "workbox-cacheable-response": "^7.3.0"
   },
   "eslintConfig": {
     "extends": [
