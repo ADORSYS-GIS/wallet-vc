@@ -160,6 +160,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Wallet />} />
                     <Route path="/contacts" element={<ContactsPage />} />
+                    <Route path="/contacts/add" element={<AddContactForm />} />
                     <Route path="/wallet" element={<Wallet />} />
                     <Route
                       path="/share-identity"
