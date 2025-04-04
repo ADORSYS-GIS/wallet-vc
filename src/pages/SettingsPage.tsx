@@ -61,8 +61,6 @@ const Settings: React.FC = () => {
       canvas.height = img.height;
       context.drawImage(img, 0, 0, img.width, img.height);
       const imageData = context.getImageData(0, 0, img.width, img.height);
-
-      console.log('Attempting to decode QR code...');
       const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: 'attemptBoth', // Try both normal and inverted colors
       });
