@@ -46,22 +46,25 @@ The wallet is built with a modular architecture, where core functionality is sep
 ### Prerequisites
 
 - Node.js (latest LTS version recommended)
-- npm 
+- npm
 
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/ADORSYS-GIS/wallet-vc.git
    cd wallet-vc
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the development server:
+
    ```bash
    npm start
    ```
