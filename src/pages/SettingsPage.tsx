@@ -1,21 +1,130 @@
 import EventSharpIcon from '@mui/icons-material/EventSharp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ShareSharpIcon from '@mui/icons-material/ShareSharp';
-import { Alert, Box, IconButton, Snackbar, Typography } from '@mui/material';
-import { useState } from 'react';
+import UploadIcon from '@mui/icons-material/Upload';
+import {
+  Alert,
+  Box,
+  Dialog,
+  IconButton,
+  Snackbar,
+  Typography,
+} from '@mui/material';
+import jsQR from 'jsqr';
+import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import AddContactForm from '../pages/contact/AddContactForm';
 
 const Settings: React.FC = () => {
   const [logoutMessage, setLogoutMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [scannedDid, setScannedDid] = useState<string | null>(null);
+
+  // Ref to access the file input element
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = () => {
     sessionStorage.clear();
     setLogoutMessage(true);
-
-    // Redirect to login page after logout
     setTimeout(() => {
       window.location.href = '/login';
     }, 1000);
+  };
+
+  const handleQRUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setErrorMessage('No file selected. Please choose an image.');
+      return;
+    }
+
+    // Create a new Image object for each upload to avoid caching issues
+    const img = new Image();
+    let objectUrl: string | null = null;
+
+    img.onload = () => {
+      console.log('Image loaded successfully:', img.width, 'x', img.height);
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) {
+        console.log('Failed to create canvas context');
+        setErrorMessage(
+          'Failed to create canvas context for QR code scanning.',
+        );
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      context.drawImage(img, 0, 0, img.width, img.height);
+      const imageData = context.getImageData(0, 0, img.width, img.height);
+
+      console.log('Attempting to decode QR code...');
+      const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'attemptBoth', // Try both normal and inverted colors
+      });
+
+      if (!qrCode) {
+        setErrorMessage(
+          'Unable to scan QR code. Please try a different image.',
+        );
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      const qrData = qrCode.data;
+
+      if (!qrData) {
+        setErrorMessage('No data found in QR code.');
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      if (!qrData.startsWith('did:peer:')) {
+        setErrorMessage(
+          'Invalid QR code format. Please upload a valid identity QR code.',
+        );
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      setScannedDid(qrData);
+      setOpenModal(true);
+
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    img.onerror = () => {
+      setErrorMessage(
+        'Error loading image. Please try again with a different image.',
+      );
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+
+      // Reset the file input on error
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setScannedDid(null);
+
+    // Reset the file input when the modal closes
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -44,7 +153,6 @@ const Settings: React.FC = () => {
         Settings
       </Typography>
 
-      {/* Grid Layout for Icons */}
       <Box
         sx={{
           display: 'grid',
@@ -53,7 +161,6 @@ const Settings: React.FC = () => {
           justifyContent: 'center',
         }}
       >
-        {/* Share Identity Icon */}
         <NavLink to="/share-identity" style={{ textDecoration: 'none' }}>
           <Box sx={{ textAlign: 'center' }}>
             <IconButton sx={{ fontSize: 40, color: '#0063F7' }}>
@@ -65,7 +172,6 @@ const Settings: React.FC = () => {
           </Box>
         </NavLink>
 
-        {/* Activities Icon */}
         <NavLink to="/activities" style={{ textDecoration: 'none' }}>
           <Box sx={{ textAlign: 'center' }}>
             <IconButton sx={{ fontSize: 40, color: '#0063F7' }}>
@@ -77,7 +183,28 @@ const Settings: React.FC = () => {
           </Box>
         </NavLink>
 
-        {/* Logout Icon */}
+        <Box sx={{ textAlign: 'center' }}>
+          <label htmlFor="qr-upload">
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="qr-upload"
+              type="file"
+              onChange={handleQRUpload}
+              ref={fileInputRef} // Attach the ref to the input
+            />
+            <IconButton
+              component="span"
+              sx={{ fontSize: 40, color: '#0063F7' }}
+            >
+              <UploadIcon />
+            </IconButton>
+          </label>
+          <Typography variant="body2" sx={{ color: '#333' }}>
+            Upload QR
+          </Typography>
+        </Box>
+
         <Box sx={{ textAlign: 'center' }}>
           <IconButton
             color="primary"
@@ -98,7 +225,6 @@ const Settings: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Snackbar for logout success message */}
       <Snackbar
         open={logoutMessage}
         autoHideDuration={3000}
@@ -121,6 +247,43 @@ const Settings: React.FC = () => {
           Logout successful!
         </Alert>
       </Snackbar>
+
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={3000}
+        onClose={() => setErrorMessage(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setErrorMessage(null)}
+          severity="error"
+          sx={{
+            width: '100%',
+            backgroundColor: '#f44336',
+            color: 'white',
+            fontWeight: 600,
+            padding: '10px',
+            borderRadius: '5px',
+            boxShadow: 2,
+          }}
+        >
+          {errorMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* Modal for AddContactForm */}
+      <Dialog
+        open={openModal}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        {/* Rendering modal */}
+        <AddContactForm
+          initialScannedDid={scannedDid}
+          onClose={handleCloseModal}
+        />
+      </Dialog>
     </Box>
   );
 };
