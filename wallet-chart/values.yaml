@@ -1,0 +1,26 @@
+fullnameOverride: wallet
+dnsHostname: demo-wallet.eudi-adorsys.com
+
+wallet:
+  image:
+    repository: ghcr.io/adorsys-gis/wallet-vc
+    tag: 1.0.0
+    pullPolicy: Always
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  ingress:
+    ingressClassName: nginx
+    path: /
+    pathType: Prefix
+    tls:
+      hosts:
+        - '*.eudi-adorsys.com'
+        - 'eudi-adorsys.com'
+    secretName: eudi-adorsys-tls
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+  imagePullSecret: ghcr-pull-secret
+  
