@@ -22,17 +22,26 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const contactService = new ContactService(eventBus);
 
-const AddContactForm: React.FC = () => {
+interface AddContactFormProps {
+  initialScannedDid?: string | null;
+  onClose?: () => void;
+}
+
+const AddContactForm: React.FC<AddContactFormProps> = ({
+  initialScannedDid,
+  onClose,
+}) => {
   const location = useLocation();
-  const scannedDid = location.state?.scannedDid || '';
+  const navigate = useNavigate();
+
+  // Use initialScannedDid if provided, otherwise fall back to location.state
+  const scannedDid = initialScannedDid || location.state?.scannedDid || '';
 
   const [name, setName] = useState('');
   const [did, setDid] = useState(scannedDid);
   const [isLoading, setIsLoading] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const push = useNavigate();
-
   const isSmallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('sm'),
   );
@@ -42,13 +51,17 @@ const AddContactForm: React.FC = () => {
       setIsLoading(false);
       if (response.status === ServiceResponseStatus.Success) {
         setMessage('✅ Contact added successfully!');
-        setDid(''); // Cleared instead of null
+        setDid('');
         setName('');
         setOpenSnackbar(true);
 
-        // Navigate after showing Snackbar
+        // If onClose is provided (modal context), close the modal; otherwise, navigate
         setTimeout(() => {
-          push('/contacts');
+          if (onClose) {
+            onClose();
+          } else {
+            navigate('/contacts');
+          }
         }, 3000);
       } else {
         setMessage(`❗ Failed to add contact: ${response.payload}`);
@@ -61,7 +74,7 @@ const AddContactForm: React.FC = () => {
     return () => {
       eventBus.off(ContactEventChannel.CreateContact, handleContactCreated);
     };
-  }, [push]);
+  }, [navigate, onClose]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -75,8 +88,7 @@ const AddContactForm: React.FC = () => {
       flexDirection="column"
       gap={2}
       justifyContent="center"
-      height="100vh"
-      sx={{ textAlign: 'center' }}
+      sx={{ textAlign: 'center', padding: 3 }}
     >
       <Typography variant="h5" sx={{ color: '#4A4A4A', marginBottom: '16px' }}>
         Add Contact
