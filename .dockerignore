@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+Dockerfile
+.dockerignore
+.gitignore
+README.md
+eslint.config.mjs
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+.github/workflows

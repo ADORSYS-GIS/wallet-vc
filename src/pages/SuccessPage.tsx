@@ -9,10 +9,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import { SnackbarCloseReason } from '@mui/material/Snackbar';
+import React, { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SnackbarCloseReason } from '@mui/material/Snackbar';
 
 const SuccessPage: React.FC = () => {
   const location = useLocation();
@@ -20,13 +20,16 @@ const SuccessPage: React.FC = () => {
 
   const result = location.state?.result || null;
   const error = location.state?.error ?? null;
-  const routingkey = result?.mediatorRoutingKey;
+  const messagingDid = result?.messagingDid;
+  const mediatorDid = result?.mediatorDid;
 
   const validRoutingKey =
-    typeof routingkey === 'string' && routingkey.length > 0 ? routingkey : null;
+    typeof messagingDid === 'string' && messagingDid.length > 0
+      ? messagingDid
+      : null;
 
   const qrLink = validRoutingKey
-    ? `${window.location.origin}/qr?key=${encodeURIComponent(routingkey)}`
+    ? `${window.location.origin}/qr?key=${encodeURIComponent(messagingDid)}`
     : null;
 
   const [fallbackOpen, setFallbackOpen] = useState(false);
@@ -58,7 +61,7 @@ const SuccessPage: React.FC = () => {
           title: 'Routing Key',
           text:
             'Scan your routing key to proceed with messaging. Routing Key: ' +
-            routingkey,
+            messagingDid,
           url: qrLink ?? undefined,
         });
       } catch (error) {
@@ -68,6 +71,12 @@ const SuccessPage: React.FC = () => {
       setFallbackOpen(true);
     }
   };
+
+  useEffect(() => {
+    if (mediatorDid) {
+      localStorage.setItem('mediatorDid', mediatorDid);
+    }
+  }, [mediatorDid]);
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
