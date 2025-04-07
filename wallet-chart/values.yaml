@@ -23,4 +23,3 @@ wallet:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
   imagePullSecret: ghcr-pull-secret
-  
