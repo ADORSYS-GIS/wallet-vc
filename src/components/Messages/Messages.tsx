@@ -21,10 +21,18 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
-import { Badge, Box, Paper, Tooltip, Typography } from '@mui/material';
+import {
+  Badge,
+  Box,
+  CircularProgress,
+  Paper,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnreadStatusRepository } from '../../utils/UnreadStatusRepository';
+import { getDecryptedPin } from '../../utils/auth';
 
 // A set to track processed messages, scoped globally but reset per component lifecycle if needed
 const processedMessages = new Set<string>();
@@ -41,6 +49,8 @@ const Messages: React.FC = () => {
   const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
   const [messagingDID, setMessagingDID] = useState<string | null>(null);
   const [didForMediation, setDidForMediation] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
@@ -54,10 +64,35 @@ const Messages: React.FC = () => {
     [],
   );
 
-  // Fetch user PIN
+  // Fetch and decrypt PIN on mount, then clear it from state after use
   useEffect(() => {
-    const storedPin = localStorage.getItem('userPin');
-    if (storedPin) setSecretPinNumber(parseInt(storedPin, 10));
+    const fetchPin = async () => {
+      setIsLoading(true);
+      try {
+        const pin = await getDecryptedPin(); // Returns string | null
+        if (pin !== null) {
+          const parsedPin = parseInt(pin, 10);
+          if (isNaN(parsedPin)) {
+            throw new Error('Decrypted PIN is not a valid number');
+          }
+          setSecretPinNumber(parsedPin);
+        } else {
+          setError('No PIN found. Please set up your PIN.');
+        }
+      } catch (err) {
+        setError('Failed to authenticate and retrieve PIN.');
+        console.error('PIN fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPin();
+
+    // Cleanup: Clear PIN from state when component unmounts
+    return () => {
+      setSecretPinNumber(null); // Remove PIN from memory
+    };
   }, []);
 
   // Fetch DIDs
@@ -195,8 +230,8 @@ const Messages: React.FC = () => {
     };
 
     checkAndSyncMessages();
-    const intreval = 5000;
-    const intervalId = setInterval(checkAndSyncMessages, intreval);
+    const interval = 5000;
+    const intervalId = setInterval(checkAndSyncMessages, interval);
     return () => clearInterval(intervalId);
   }, [
     messagePickup,
@@ -298,133 +333,173 @@ const Messages: React.FC = () => {
   );
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: 2,
-        width: '100%',
-        overflow: 'auto',
-      }}
-    >
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 'bold', color: '#075E54', marginBottom: 2 }}
-      >
-        Messages
-      </Typography>
+    <>
+      {/* Always render these elements to ensure they're available for WebAuthn library */}
+      <div id="messageList" style={{ display: 'none' }}></div>
+      <div id="error" style={{ display: 'none' }}></div>
 
-      {sortedContacts.length > 0 ? (
-        sortedContacts.map((contact) => {
-          const message = lastMessages[contact.did];
-          const unreadCount = unreadMessages[contact.did] || 0;
-
-          return (
-            <Paper
-              key={contact.id}
-              onClick={() => openChat(contact.id)}
-              sx={{
-                padding: 2,
-                marginBottom: 2,
-                width: '90%',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderRadius: 2,
-                boxShadow: 2,
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#f1f1f1' },
-              }}
-            >
-              {/* Contact Name, DID, and Last Message */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  overflow: 'hidden',
-                  flex: 1,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
-                >
-                  {contact.name}
-                </Typography>
-                <Tooltip title={contact.did} arrow>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#8A8A8A',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '250px',
-                    }}
-                  >
-                    {contact.did}
-                  </Typography>
-                </Tooltip>
-                {message && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#4A4A4A',
-                      marginTop: '4px',
-                    }}
-                  >
-                    {message.text}
-                  </Typography>
-                )}
-              </Box>
-
-              {/*Timestamp and Unread Count on the Same Line*/}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  minWidth: '170px',
-                }}
-              >
-                {message && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#8A8A8A',
-                      marginRight: 2.5,
-                    }}
-                  >
-                    {new Date(message.timestamp).toLocaleString()}
-                  </Typography>
-                )}
-                {unreadCount > 0 && (
-                  <Badge
-                    badgeContent={unreadCount}
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        backgroundColor: '#1E90FF',
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        height: '20px',
-                        borderRadius: '10px',
-                      },
-                    }}
-                  />
-                )}
-              </Box>
-            </Paper>
-          );
-        })
+      {/* Show loading state while fetching PIN */}
+      {isLoading || secretPinNumber === null ? (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
+        >
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>
+            {secretPinNumber === null
+              ? 'Authenticating...'
+              : 'Loading messages...'}
+          </Typography>
+        </Box>
+      ) : error ? (
+        // Render error if PIN retrieval failed
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
+        >
+          <Typography color="error">{error}</Typography>
+          <Typography
+            onClick={() => navigate('/login')}
+            sx={{ cursor: 'pointer', color: 'primary.main', mt: 1 }}
+          >
+            Back to Login
+          </Typography>
+        </Box>
       ) : (
-        <Typography variant="body1" sx={{ color: '#4A4A4A' }}>
-          No messages
-        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: 2,
+            width: '100%',
+            overflow: 'auto',
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 'bold', color: '#075E54', marginBottom: 2 }}
+          >
+            Messages
+          </Typography>
+
+          {sortedContacts.length > 0 ? (
+            sortedContacts.map((contact) => {
+              const message = lastMessages[contact.did];
+              const unreadCount = unreadMessages[contact.did] || 0;
+
+              return (
+                <Paper
+                  key={contact.id}
+                  onClick={() => openChat(contact.id)}
+                  sx={{
+                    padding: 2,
+                    marginBottom: 2,
+                    width: '90%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderRadius: 2,
+                    boxShadow: 2,
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: '#f1f1f1' },
+                  }}
+                >
+                  {/* Contact Name, DID, and Last Message */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      overflow: 'hidden',
+                      flex: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ color: '#4A4A4A', fontWeight: 'bold' }}
+                    >
+                      {contact.name}
+                    </Typography>
+                    <Tooltip title={contact.did} arrow>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#8A8A8A',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '250px',
+                        }}
+                      >
+                        {contact.did}
+                      </Typography>
+                    </Tooltip>
+                    {message && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#4A4A4A',
+                          marginTop: '4px',
+                        }}
+                      >
+                        {message.text}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Timestamp and Unread Count on the Same Line */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      minWidth: '170px',
+                    }}
+                  >
+                    {message && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#8A8A8A',
+                          marginRight: 2.5,
+                        }}
+                      >
+                        {new Date(message.timestamp).toLocaleString()}
+                      </Typography>
+                    )}
+                    {unreadCount > 0 && (
+                      <Badge
+                        badgeContent={unreadCount}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            backgroundColor: '#1E90FF',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            height: '20px',
+                            borderRadius: '10px',
+                          },
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Paper>
+              );
+            })
+          ) : (
+            <Typography variant="body1" sx={{ color: '#4A4A4A' }}>
+              No messages
+            </Typography>
+          )}
+        </Box>
       )}
-    </Box>
+    </>
   );
 };
 

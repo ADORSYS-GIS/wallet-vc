@@ -6,6 +6,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  Link,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +34,15 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
 
     try {
       const messages = await authenticateUser();
+
+      // Check if messages is valid
+      if (!messages || (Array.isArray(messages) && messages.length === 0)) {
+        setError('Authentication failed or was canceled. Please try again.');
+        return;
+      }
+
       const storedPin = getPin(messages);
+      console.log('Stored PIN:', storedPin); // Debug log
 
       if (!storedPin) {
         setError('No PIN set up or invalid PIN data. Please register.');
@@ -50,10 +59,19 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
       navigate('/');
       setInputPin('');
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Authentication failed';
-      setError(`Login failed: ${errorMessage}`);
-      console.error('Login error:', err);
+      if (err instanceof Error) {
+        if (
+          (err instanceof DOMException && err.name === 'NotAllowedError') ||
+          err.name === 'AbortError' ||
+          err.message.includes('canceled')
+        ) {
+          setError('Authentication canceled. Please try again.');
+        } else {
+          setError(`Login failed: ${err.message}`);
+        }
+      } else {
+        setError('Authentication failed: An unexpected error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +83,15 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
       setInputPin(value);
       setError(null);
     }
+  };
+
+  // reset the PIN or navigate back
+  const handleResetPin = () => {
+    // Clear the stored PIN and redirect to the PIN setup page
+    localStorage.removeItem('messages');
+    localStorage.removeItem('credentialId');
+    localStorage.removeItem('registrationSalt');
+    navigate('/setup-pin', { replace: true });
   };
 
   return (
@@ -166,10 +193,25 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
               backgroundColor:
                 inputPin.length === 6 && !isLoading ? '#0056b3' : '#ccc',
             },
+            marginBottom: 2, // Add some spacing for the reset link
           }}
         >
           {isLoading ? 'Authenticating...' : 'Login'}
         </Button>
+
+        {/* Optional: Add a link to reset the PIN */}
+        <Link
+          component="button"
+          variant="body2"
+          onClick={handleResetPin}
+          sx={{
+            color: '#007BFF',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+          }}
+        >
+          Forgot PIN? Reset it
+        </Link>
 
         {/* Hidden elements to satisfy library DOM requirements */}
         <div id="messageList" style={{ display: 'none' }}></div>

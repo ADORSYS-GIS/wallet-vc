@@ -104,6 +104,16 @@ function App() {
     navigate('/login', { replace: true });
   };
 
+  // handle PIN setup completion
+  const handlePinSetupComplete = () => {
+    // Clear sessionStorage to ensure the user is not logged in
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('sessionStart');
+    // Set isLoggedIn to false to enforce the login page
+    setIsLoggedIn(false);
+    navigate('/login', { replace: true });
+  };
+
   console.log({
     isInstallable,
     isInstalled,
@@ -137,9 +147,7 @@ function App() {
               path="/setup-pin"
               element={
                 <PinSetupPage
-                  onComplete={() => {
-                    navigate('/login', { replace: true });
-                  }}
+                  onComplete={handlePinSetupComplete} // Use the new handler
                 />
               }
             />
@@ -169,6 +177,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Wallet />} />
                     <Route path="/contacts" element={<ContactsPage />} />
+                    <Route path="/contacts/add" element={<AddContactForm />} />
                     <Route path="/wallet" element={<Wallet />} />
                     <Route
                       path="/share-identity"
