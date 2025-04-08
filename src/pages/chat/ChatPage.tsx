@@ -64,6 +64,16 @@ const ChatPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check mediatorDid synchronously during component initialization
+  const mediatorDid = localStorage.getItem('mediatorDid');
+  const [isMediatorDidMissing, setIsMediatorDidMissing] =
+    useState<boolean>(!mediatorDid);
+
+  // Update isMediatorDidMissing if mediatorDid changes (e.g., via localStorage updates)
+  useEffect(() => {
+    setIsMediatorDidMissing(!mediatorDid);
+  }, [mediatorDid]);
+
   // Add unread status repository
   const unreadStatusRepository = useMemo(
     () => new UnreadStatusRepository(),
@@ -100,16 +110,13 @@ const ChatPage: React.FC = () => {
     return null;
   }, [didRepository, secretPinNumber, messageRepository]);
 
-  const storedMediatorDid = localStorage.getItem('mediatorDid');
-  if (storedMediatorDid === null) {
-    throw new Error('mediatorDid is not set in local storage');
-  }
-  const mediatorDid: string = storedMediatorDid;
   const securityService = new SecurityService();
   const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
   // Fetch and decrypt PIN on mount, then clear it from state after use
   useEffect(() => {
+    if (isMediatorDidMissing) return;
+
     const fetchPin = async () => {
       setIsLoading(true);
       try {
@@ -161,9 +168,11 @@ const ChatPage: React.FC = () => {
     return () => {
       setSecretPinNumber(null);
     };
-  }, [navigate]);
+  }, [navigate, isMediatorDidMissing]);
 
   useEffect(() => {
+    if (isMediatorDidMissing) return;
+
     const handleDIDResponse = ({
       status,
       payload,
@@ -187,9 +196,11 @@ const ChatPage: React.FC = () => {
         handleDIDResponse,
       );
     };
-  }, []);
+  }, [isMediatorDidMissing]);
 
   useEffect(() => {
+    if (isMediatorDidMissing) return;
+
     const handleDIDResponse = ({
       status,
       payload,
@@ -210,9 +221,11 @@ const ChatPage: React.FC = () => {
     return () => {
       eventBus.off(DidEventChannel.GetMediatorDidIdentities, handleDIDResponse);
     };
-  }, []);
+  }, [isMediatorDidMissing]);
 
   useEffect(() => {
+    if (isMediatorDidMissing) return;
+
     const fetchContactDetails = async () => {
       if (contactId) {
         const id = parseInt(contactId);
@@ -245,7 +258,7 @@ const ChatPage: React.FC = () => {
     };
 
     fetchContactDetails();
-  }, [contactId, contactService, unreadStatusRepository]);
+  }, [contactId, contactService, unreadStatusRepository, isMediatorDidMissing]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !messageRouter) return;
@@ -268,20 +281,27 @@ const ChatPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!messagePickup || !contactDID || !didForMediation || !messagingDID)
+    if (
+      !messagePickup ||
+      !contactDID ||
+      !didForMediation ||
+      !messagingDID ||
+      isMediatorDidMissing
+    ) {
       return;
+    }
 
     const checkAndSyncMessages = async () => {
       try {
         const messageCount = await messagePickup.processStatusRequest(
-          mediatorDid,
-          didForMediation,
+          mediatorDid!,
+          didForMediation!,
         );
 
         if (messageCount > 0) {
           await messagePickup.processDeliveryRequest(
-            mediatorDid,
-            didForMediation,
+            mediatorDid!,
+            didForMediation!,
             messagingDID,
           );
           messageService.getAllMessagesByContact(contactDID);
@@ -302,9 +322,12 @@ const ChatPage: React.FC = () => {
     messageService,
     messagingDID,
     didForMediation,
+    isMediatorDidMissing,
   ]);
 
   useEffect(() => {
+    if (isMediatorDidMissing) return;
+
     const fetchMessages = async () => {
       if (contactId) {
         messageService.getAllMessagesByContact(contactDID);
@@ -353,9 +376,18 @@ const ChatPage: React.FC = () => {
       clearInterval(intervalId);
       eventBus.off(getAllByContactIdChannel, handleMessagesReceived);
     };
-  }, [contactDID, contactId, messageService, unreadStatusRepository, messages]);
+  }, [
+    contactDID,
+    contactId,
+    messageService,
+    unreadStatusRepository,
+    messages,
+    isMediatorDidMissing,
+  ]);
 
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const handleDeleteMessageEvent = (
       response: ServiceResponse<{ id: string }>,
     ) => {
@@ -377,7 +409,7 @@ const ChatPage: React.FC = () => {
     return () => {
       eventBus.off(MessageEventChannel.DeleteMessage, handleDeleteMessageEvent);
     };
-  }, []);
+  }, [isMediatorDidMissing]);
 
   const handleModalSubmit = () => {
     if (userDID.trim() !== '') {
@@ -399,6 +431,44 @@ const ChatPage: React.FC = () => {
     }));
   };
 
+  // If mediatorDid is missing, render only the modal
+  if (isMediatorDidMissing) {
+    return (
+      <Modal open={isMediatorDidMissing} onClose={() => {}}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' },
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'rgba(255, 255, 255, 255)',
+            boxShadow: 24,
+            p: 6,
+            borderRadius: 2,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Mediator Connection Required
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            It looks like you haven’t connected to the mediator yet. Please scan
+            the mediator’s invitation to continue.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/scan')}
+            sx={{ mt: 2 }}
+          >
+            Go to Scan Page
+          </Button>
+        </Box>
+      </Modal>
+    );
+  }
+
+  // If mediatorDid is set, render the normal page content
   return (
     <>
       {/* Rendering these elements to ensure they're available for WebAuthn library */}
@@ -644,7 +714,7 @@ const ChatPage: React.FC = () => {
                 left: '50%',
                 width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' },
                 transform: 'translate(-50%, -50%)',
-                bgcolor: 'rgba(255, 255, 255, 255)',
+                bgcolor: 'rgba(255, 255, 0.05)',
                 boxShadow: 24,
                 p: 6,
                 borderRadius: 2,
