@@ -24,7 +24,9 @@ import {
 import {
   Badge,
   Box,
+  Button,
   CircularProgress,
+  Modal,
   Paper,
   Tooltip,
   Typography,
@@ -52,6 +54,16 @@ const Messages: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check mediatorDid synchronously during component initialization
+  const mediatorDid = localStorage.getItem('mediatorDid');
+  const [isMediatorDidMissing, setIsMediatorDidMissing] =
+    useState<boolean>(!mediatorDid);
+
+  // Update isMediatorDidMissing if mediatorDid changes (e.g., via localStorage updates)
+  useEffect(() => {
+    setIsMediatorDidMissing(!mediatorDid);
+  }, [mediatorDid]);
+
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
   const messageRepository = useMemo(() => new MessageRepository(), []);
@@ -64,24 +76,49 @@ const Messages: React.FC = () => {
     [],
   );
 
-  // Fetch and decrypt PIN on mount, then clear it from state after use
+  // Fetch and decrypt PIN only if mediatorDid is set
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip authentication if mediatorDid is missing
+
     const fetchPin = async () => {
       setIsLoading(true);
       try {
         const pin = await getDecryptedPin(); // Returns string | null
-        if (pin !== null) {
-          const parsedPin = parseInt(pin, 10);
-          if (isNaN(parsedPin)) {
-            throw new Error('Decrypted PIN is not a valid number');
-          }
-          setSecretPinNumber(parsedPin);
-        } else {
-          setError('No PIN found. Please set up your PIN.');
+        if (pin === null) {
+          // Treat null as a cancellation
+          setError('Authentication canceled by user, redirecting to home...');
+          setTimeout(() => {
+            navigate('/', {
+              state: { message: 'Authentication was canceled by user' },
+            });
+          }, 1500);
+          return; // Exit the function to prevent further processing
         }
+        const parsedPin = parseInt(pin, 10);
+        if (isNaN(parsedPin)) {
+          throw new Error(
+            'Oops, something went wrong with authentication. Let’s try again from the home page.',
+          );
+        }
+        setSecretPinNumber(parsedPin);
       } catch (err) {
-        setError('Failed to authenticate and retrieve PIN.');
-        console.error('PIN fetch error:', err);
+        // Handle WebAuthn cancellation (NotAllowedError)
+        if (err instanceof DOMException && err.name === 'NotAllowedError') {
+          setError('Authentication canceled by user, redirecting to home...');
+          setTimeout(() => {
+            navigate('/', {
+              state: { message: 'Authentication was canceled by user' },
+            });
+          }, 1500);
+        } else {
+          // Handle other errors
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : 'Oops, something went wrong. Let’s try again from the home page.';
+          setError(errorMessage);
+          console.error('PIN fetch error:', err);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -93,10 +130,12 @@ const Messages: React.FC = () => {
     return () => {
       setSecretPinNumber(null); // Remove PIN from memory
     };
-  }, []);
+  }, [navigate, isMediatorDidMissing]);
 
   // Fetch DIDs
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const securityService = new SecurityService();
     const didIdentityService = new DIDIdentityService(
       eventBus,
@@ -109,6 +148,14 @@ const Messages: React.FC = () => {
     }: ServiceResponse<{ did: string }[]>) => {
       if (status === ServiceResponseStatus.Success && payload.length > 0) {
         setMessagingDID(payload[0].did);
+      } else {
+        // Handle missing messagingDID gracefully
+        setError(
+          'We couldn’t find your messaging ID. Please ensure you’ve connected to the mediator, and try again from the home page.',
+        );
+        setTimeout(() => {
+          navigate('/', { state: { message: 'Messaging ID not found' } });
+        }, 3000);
       }
     };
 
@@ -143,7 +190,7 @@ const Messages: React.FC = () => {
         handleMediatorDIDResponse,
       );
     };
-  }, []);
+  }, [navigate, isMediatorDidMissing]);
 
   const messagePickup = useMemo(() => {
     if (secretPinNumber !== null) {
@@ -156,9 +203,6 @@ const Messages: React.FC = () => {
     return null;
   }, [didRepository, secretPinNumber, messageRepository]);
 
-  const mediatorDid = localStorage.getItem('mediatorDid');
-  if (!mediatorDid) throw new Error('mediatorDid is not set in local storage');
-
   const openChat = async (contactId: number | undefined) => {
     if (!contactId) return;
     const contact = contacts.find((c) => c.id === contactId);
@@ -170,6 +214,8 @@ const Messages: React.FC = () => {
 
   // Fetch contacts
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const handleContactsReceived = (response: ServiceResponse<Contact[]>) => {
       if (
         response.status === ServiceResponseStatus.Success &&
@@ -183,10 +229,12 @@ const Messages: React.FC = () => {
     return () => {
       eventBus.off(ContactEventChannel.GetAllContacts, handleContactsReceived);
     };
-  }, [contactService]);
+  }, [contactService, isMediatorDidMissing]);
 
   // Initialize unread counts
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const initializeUnreadCounts = async () => {
       const initialUnread: { [key: string]: number } = {};
       for (const contact of contacts) {
@@ -196,7 +244,7 @@ const Messages: React.FC = () => {
       setUnreadMessages(initialUnread);
     };
     if (contacts.length > 0) initializeUnreadCounts();
-  }, [contacts, unreadStatusRepository]);
+  }, [contacts, unreadStatusRepository, isMediatorDidMissing]);
 
   // Sync messages
   useEffect(() => {
@@ -205,20 +253,21 @@ const Messages: React.FC = () => {
       !didForMediation ||
       !messagingDID ||
       contacts.length === 0
-    )
+    ) {
       return;
+    }
 
     const checkAndSyncMessages = async () => {
       for (const contact of contacts) {
         try {
           const messageCount = await messagePickup.processStatusRequest(
-            mediatorDid,
-            didForMediation,
+            mediatorDid!,
+            didForMediation!,
           );
           if (messageCount > 0) {
             await messagePickup.processDeliveryRequest(
-              mediatorDid,
-              didForMediation,
+              mediatorDid!,
+              didForMediation!,
               messagingDID,
             );
             messageService.getAllMessagesByContact(contact.did);
@@ -300,6 +349,8 @@ const Messages: React.FC = () => {
 
   // Register message listener
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const handleEvent = (response: ServiceResponse<Message[]>) => {
       handleMessagesReceived(response);
     };
@@ -308,14 +359,16 @@ const Messages: React.FC = () => {
     return () => {
       eventBus.off(MessageEventChannel.GetAllByContactId, handleEvent);
     };
-  }, [handleMessagesReceived]);
+  }, [handleMessagesReceived, isMediatorDidMissing]);
 
   // Trigger initial message fetch
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     contacts.forEach((contact) =>
       messageService.getAllMessagesByContact(contact.did),
     );
-  }, [contacts, messageService]);
+  }, [contacts, messageService, isMediatorDidMissing]);
 
   const sortedContacts = useMemo(
     () =>
@@ -332,14 +385,74 @@ const Messages: React.FC = () => {
     [contacts, lastMessages],
   );
 
+  // If mediatorDid is missing, render only the modal
+  if (isMediatorDidMissing) {
+    return (
+      <Modal open={isMediatorDidMissing} onClose={() => {}}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' },
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'rgba(255, 255, 255, 255)',
+            boxShadow: 24,
+            p: 6,
+            borderRadius: 2,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Mediator Connection Required
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            It looks like you haven’t connected to the mediator yet. Please scan
+            the mediator’s invitation to continue.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/scan')}
+            sx={{ mt: 2 }}
+          >
+            Go to Scan Page
+          </Button>
+        </Box>
+      </Modal>
+    );
+  }
+
+  // If mediatorDid is set, render the normal page content
   return (
     <>
       {/* Always render these elements to ensure they're available for WebAuthn library */}
       <div id="messageList" style={{ display: 'none' }}></div>
       <div id="error" style={{ display: 'none' }}></div>
 
-      {/* Show loading state while fetching PIN */}
-      {isLoading || secretPinNumber === null ? (
+      {/* Show error message if it exists */}
+      {error ? (
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
+        >
+          <Typography color="error">{error}</Typography>
+          {error !==
+            'Authentication canceled by user, redirecting to home...' &&
+            error !==
+              'We couldn’t find your messaging ID. Please ensure you’ve connected to the mediator, and try again from the home page.' && (
+              <Typography
+                onClick={() => navigate('/')}
+                sx={{ cursor: 'pointer', color: 'primary.main', mt: 1 }}
+              >
+                Back to Home
+              </Typography>
+            )}
+        </Box>
+      ) : isLoading ? (
+        // Show loading state only if there is no error and isLoading is true
         <Box
           display="flex"
           justifyContent="center"
@@ -353,24 +466,8 @@ const Messages: React.FC = () => {
               : 'Loading messages...'}
           </Typography>
         </Box>
-      ) : error ? (
-        // Render error if PIN retrieval failed
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          height="100vh"
-        >
-          <Typography color="error">{error}</Typography>
-          <Typography
-            onClick={() => navigate('/login')}
-            sx={{ cursor: 'pointer', color: 'primary.main', mt: 1 }}
-          >
-            Back to Login
-          </Typography>
-        </Box>
       ) : (
+        // Show main content if there is no error and loading is complete
         <Box
           sx={{
             display: 'flex',
@@ -493,7 +590,7 @@ const Messages: React.FC = () => {
               );
             })
           ) : (
-            <Typography variant="body1" sx={{ color: '#4A4A4A' }}>
+            <Typography variant="body1" sx={{ color: '4A4A4A' }}>
               No messages
             </Typography>
           )}
