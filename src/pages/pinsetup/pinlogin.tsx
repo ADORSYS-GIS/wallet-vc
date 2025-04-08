@@ -90,6 +90,7 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
     localStorage.removeItem('messages');
     localStorage.removeItem('credentialId');
     localStorage.removeItem('registrationSalt');
+    localStorage.removeItem('mediatorDid');
     navigate('/setup-pin', { replace: true });
   };
 
