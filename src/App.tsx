@@ -1,7 +1,6 @@
 import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
@@ -20,12 +19,14 @@ import PinSetupPage from './pages/pinsetup/pinsetup';
 import SettingsPage from './pages/SettingsPage';
 import SuccessPage from './pages/SuccessPage';
 import Wallet from './pages/Wallet';
+import { AuthProvider, useAuth } from './utils/AuthContext';
 
 const theme = createTheme();
 
 function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
   const navigate = useNavigate();
+  const { isLoggedIn, login } = useAuth();
 
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
@@ -34,83 +35,8 @@ function App() {
     localStorage.getItem('messages') !== null &&
     JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
 
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
-    const sessionStart = parseInt(
-      sessionStorage.getItem('sessionStart') || '0',
-      10,
-    );
-    const currentTime = Date.now();
-    const sessionTimeout = 30 * 60 * 1000;
-    return loggedInState && currentTime - sessionStart < sessionTimeout;
-  });
-
-  useEffect(() => {
-    sessionStorage.setItem('isLoggedIn', isLoggedIn.toString());
-    if (isLoggedIn) {
-      sessionStorage.setItem('sessionStart', Date.now().toString());
-    } else {
-      sessionStorage.removeItem('sessionStart');
-    }
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    const resetSessionTimeout = () => {
-      if (isLoggedIn) {
-        sessionStorage.setItem('sessionStart', Date.now().toString());
-      }
-    };
-
-    const events = ['click', 'keypress', 'mousemove', 'scroll', 'touchstart'];
-    events.forEach((event) =>
-      window.addEventListener(event, resetSessionTimeout),
-    );
-
-    return () => {
-      events.forEach((event) =>
-        window.removeEventListener(event, resetSessionTimeout),
-      );
-    };
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    const checkSession = () => {
-      const sessionStart = parseInt(
-        sessionStorage.getItem('sessionStart') || '0',
-        10,
-      );
-      const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
-      const currentTime = Date.now();
-      const sessionTimeout = 30 * 60 * 1000;
-
-      if (loggedInState && currentTime - sessionStart >= sessionTimeout) {
-        handleLogout();
-      }
-    };
-
-    const interval = setInterval(checkSession, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    navigate('/');
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    sessionStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('sessionStart');
-    navigate('/login', { replace: true });
-  };
-
-  // handle PIN setup completion
+  // Handle PIN setup completion
   const handlePinSetupComplete = () => {
-    // Clear sessionStorage to ensure the user is not logged in
-    sessionStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('sessionStart');
-    // Set isLoggedIn to false to enforce the login page
-    setIsLoggedIn(false);
     navigate('/login', { replace: true });
   };
 
@@ -145,11 +71,7 @@ function App() {
           <>
             <Route
               path="/setup-pin"
-              element={
-                <PinSetupPage
-                  onComplete={handlePinSetupComplete} // Use the new handler
-                />
-              }
+              element={<PinSetupPage onComplete={handlePinSetupComplete} />}
             />
             <Route path="*" element={<Navigate to="/setup-pin" replace />} />
           </>
@@ -158,10 +80,7 @@ function App() {
         {/* PIN login route */}
         {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
           <>
-            <Route
-              path="/login"
-              element={<PinLoginPage onLogin={handleLogin} />}
-            />
+            <Route path="/login" element={<PinLoginPage onLogin={login} />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         )}
@@ -207,4 +126,11 @@ function App() {
   );
 }
 
-export default App;
+// Wrap App in AuthProvider
+export default function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
