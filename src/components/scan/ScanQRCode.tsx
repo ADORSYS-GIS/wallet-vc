@@ -4,16 +4,21 @@ import { QrScanner } from '@adorsys-gis/qr-scanner';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Box,
+  Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
-  Theme,
   Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import { EventEmitter } from 'eventemitter3';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getDecryptedPin } from '../../utils/auth';
 
 interface ScanQRCodeProps {
   onScanSuccess?: (data: string) => void;
@@ -21,38 +26,84 @@ interface ScanQRCodeProps {
 }
 
 const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const push = useNavigate();
-  const isSmallScreen = useMediaQuery((theme: Theme) =>
+  const navigate = useNavigate();
+  const isSmallScreen = useMediaQuery((theme: any) =>
     theme.breakpoints.down('sm'),
   );
 
-  // Get user PIN as it's needed to instantiate the DIDService
-  const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
-  useEffect(() => {
-    const storedPin = localStorage.getItem('userPin');
-    if (storedPin) {
-      setSecretPinNumber(parseInt(storedPin, 10));
-    }
-  }, []);
+  // Authentication states
+  const [showAuthDialog, setShowAuthDialog] = useState(true);
+  const [authStatus, setAuthStatus] = useState<
+    'idle' | 'pending' | 'success' | 'error'
+  >('idle');
+  const [authMessage, setAuthMessage] = useState('Starting authentication...');
+  const authInProgress = useRef(false);
 
+  // Application states
+  const [error, setError] = useState<string | null>(null);
+  const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
+
+  // Services
   const eventBus = useMemo(() => new EventEmitter(), []);
   const securityService = useMemo(() => new SecurityService(), []);
   const didService = useMemo(() => {
-    if (secretPinNumber === null) {
-      return null;
-    }
+    if (secretPinNumber === null) return null;
     return new DidService(eventBus, securityService, secretPinNumber);
   }, [eventBus, securityService, secretPinNumber]);
 
-  if (!didService) {
-    return <Typography>Loading PIN...</Typography>;
-  }
+  // Handle authentication cancellation
+  const handleAuthCancel = () => {
+    setAuthStatus('error');
+    setAuthMessage('Authentication canceled');
+    setTimeout(() => {
+      navigate('/', {
+        state: { message: 'Authentication was canceled by user' },
+      });
+    }, 1000);
+  };
 
+  // Handle authentication continuation
+  const handleAuthContinue = async () => {
+    setShowAuthDialog(false);
+    setAuthStatus('pending');
+    setAuthMessage('Authenticating with WebAuthn...');
+    authInProgress.current = true;
+
+    try {
+      const pin = await getDecryptedPin();
+      if (!pin) throw new Error('No PIN found');
+
+      const parsedPin = parseInt(pin, 10);
+      if (isNaN(parsedPin)) throw new Error('Invalid PIN format');
+
+      setSecretPinNumber(parsedPin);
+      setAuthStatus('success');
+      setAuthMessage('Authentication successful!');
+    } catch (error) {
+      setAuthStatus('error');
+      setAuthMessage(
+        error instanceof Error ? error.message : 'Authentication failed',
+      );
+      navigate('/', {
+        state: {
+          message:
+            error instanceof Error ? error.message : 'Authentication failed',
+        },
+      });
+    } finally {
+      authInProgress.current = false;
+    }
+  };
+
+  // Handle QR code scanning
   const handleScan = async (data: string) => {
+    if (!didService) {
+      setError('DID service not initialized');
+      return;
+    }
     setError(null);
-    setIsLoading(true);
+    setAuthStatus('pending'); // Show the loader during QR code processing
+    setAuthMessage('Processing QR code...');
 
     try {
       if (data.includes('_oob=')) {
@@ -64,81 +115,105 @@ const ScanQRCode: React.FC<ScanQRCodeProps> = ({ onScanSuccess, onBack }) => {
           if (onScanSuccess) {
             onScanSuccess(credentialOffer);
           } else {
-            push('/success', {
-              state: {
-                result: rawResult,
-              },
-            });
+            navigate('/success', { state: { result: rawResult } });
           }
         } else {
-          throw new Error('operation failed');
+          throw new Error('Operation failed');
         }
       } else if (data.startsWith('did:peer:')) {
-        push('/add-contact', { state: { scannedDid: data } });
+        navigate('/add-contact', { state: { scannedDid: data } });
       } else {
-        throw new Error('Unrecognized QR code format.');
+        throw new Error('Unrecognized QR code format');
       }
-    } catch (e) {
-      console.error('Error scanning QR code:', e);
-      const genericError = 'An unexpected error occurred. Please try again.';
-      push('/success', {
-        state: {
-          error: genericError,
-        },
-      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Scanning failed');
+      setAuthStatus('error');
     } finally {
-      setIsLoading(false);
+      setAuthStatus('success'); // Return to success state after processing
+      setAuthMessage(''); // Clear the message
     }
   };
 
   return (
-    <Box display="flex" width="100%" height="100vh" sx={{ paddingTop: '10px' }}>
-      <Tooltip arrow title="Back">
-        <IconButton
-          size="small"
-          onClick={onBack || (() => push('/'))}
-          sx={{
-            position: 'absolute',
-            top: isSmallScreen ? 80 : 130,
-            left: 15,
-            color: 'primary.main',
-          }}
+    <>
+      {/* Hidden elements needed for WebAuthn */}
+      <div id="messageList" style={{ display: 'none' }}></div>
+      <div id="error" style={{ display: 'none' }}></div>
+
+      {/* Authentication Confirmation Dialog */}
+      <Dialog open={showAuthDialog} onClose={handleAuthCancel}>
+        <DialogTitle>Authentication Required</DialogTitle>
+        <DialogContent>
+          <Typography>
+            To access the scanning functionality, you need to authenticate. This
+            will use your device's built-in security (like fingerprint or Face
+            ID).
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAuthCancel} color="secondary">
+            Cancel (Go Home)
+          </Button>
+          <Button onClick={handleAuthContinue} color="primary" autoFocus>
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Loading/Authentication States */}
+      {authStatus === 'pending' && (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
         >
-          <ArrowBackIcon />
-        </IconButton>
-      </Tooltip>
-
-      {isLoading && (
-        <CircularProgress
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>{authMessage}</Typography>
+        </Box>
       )}
 
-      <QrScanner
-        facingMode="environment"
-        scanDelay={500}
-        onResult={(result: string) => {
-          handleScan(result);
-        }}
-        onError={(err: unknown) => {
-          setIsLoading(false);
-          setError(
-            err instanceof Error ? err.message : 'An unknown error occurred.',
-          );
-        }}
-      />
+      {/* Main Content (only shown after successful auth) */}
+      {authStatus === 'success' && (
+        <Box
+          display="flex"
+          width="100%"
+          height="100vh"
+          sx={{ paddingTop: '10px' }}
+        >
+          <Tooltip arrow title="Back">
+            <IconButton
+              size="small"
+              onClick={onBack || (() => navigate('/'))}
+              sx={{
+                position: 'absolute',
+                top: isSmallScreen ? 80 : 130,
+                left: 15,
+                color: 'primary.main',
+              }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          </Tooltip>
 
-      {error && (
-        <Typography color="error" sx={{ position: 'absolute', top: 10 }}>
-          {error}
-        </Typography>
+          <QrScanner
+            facingMode="environment"
+            scanDelay={500}
+            onResult={(result: string) => handleScan(result)}
+            onError={(err: unknown) => {
+              setAuthStatus('error');
+              setError(err instanceof Error ? err.message : 'QR Scanner error');
+            }}
+          />
+
+          {error && (
+            <Typography color="error" sx={{ position: 'absolute', top: 10 }}>
+              {error}
+            </Typography>
+          )}
+        </Box>
       )}
-    </Box>
+    </>
   );
 };
 

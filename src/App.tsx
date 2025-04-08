@@ -1,7 +1,6 @@
 import { usePWA } from '@adorsys-gis/usepwa';
 import '@adorsys-gis/usepwa/dist/src/lib/components/main.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import BottomNav from './components/layout/BottomNav';
 import MainSection from './components/layout/MainSection';
@@ -9,9 +8,6 @@ import Navbar from './components/layout/Navbar';
 import Messages from './components/Messages/Messages';
 import ScanQRCode from './components/scan/ScanQRCode';
 import ActivitiesPage from './pages/ActivitiesPage';
-import SettingsPage from './pages/SettingsPage';
-import SuccessPage from './pages/SuccessPage';
-import Wallet from './pages/Wallet';
 import ChatPage from './pages/chat/ChatPage';
 import AddContactForm from './pages/contact/AddContactForm';
 import ContactInfoPage from './pages/contact/ContactInfoPage';
@@ -20,81 +16,36 @@ import ShareIdentityPage from './pages/identity/ShareIdentityPage';
 import OnboardingSlides from './pages/onboarding-slides/onboardingslides';
 import PinLoginPage from './pages/pinsetup/pinlogin';
 import PinSetupPage from './pages/pinsetup/pinsetup';
+import SettingsPage from './pages/SettingsPage';
+import SuccessPage from './pages/SuccessPage';
+import Wallet from './pages/Wallet';
+import { AuthProvider, useAuth } from './utils/AuthContext';
 
-// Create the theme for the app
 const theme = createTheme();
 
 function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
   const navigate = useNavigate();
+  const { isLoggedIn, login } = useAuth();
 
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
 
-  const hasSetPin: boolean = localStorage.getItem('userPin') !== null;
+  const hasSetPin: boolean =
+    localStorage.getItem('messages') !== null &&
+    JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
 
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    sessionStorage.getItem('isLoggedIn') === 'true',
-  );
-
-  const sessionTimeout = 30 * 60 * 1000;
-
-  // Reset session start time on user interaction
-  useEffect(() => {
-    const resetSessionTimeout = () => {
-      if (isLoggedIn) {
-        sessionStorage.setItem('sessionStart', Date.now().toString());
-      }
-    };
-
-    const events = ['click', 'keypress', 'mousemove', 'scroll', 'touchstart'];
-    events.forEach((event) =>
-      window.addEventListener(event, resetSessionTimeout),
-    );
-
-    return () => {
-      events.forEach((event) =>
-        window.removeEventListener(event, resetSessionTimeout),
-      );
-    };
-  }, [isLoggedIn]);
-
-  // Check session status on load and handle session expiration
-  useEffect(() => {
-    const sessionStart = parseInt(
-      sessionStorage.getItem('sessionStart') || '0',
-      10,
-    );
-    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
-    const currentTime = Date.now();
-
-    if (loggedInState && currentTime - sessionStart < sessionTimeout) {
-      setIsLoggedIn(true);
-    } else {
-      handleLogout();
-    }
-  }, []);
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    sessionStorage.setItem('isLoggedIn', 'true');
-    sessionStorage.setItem('sessionStart', Date.now().toString());
-    navigate('/'); // Navigate to home after login
+  // Handle PIN setup completion
+  const handlePinSetupComplete = () => {
+    navigate('/login', { replace: true });
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    sessionStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('sessionStart');
-    navigate('/login'); // Navigate to login on logout
-  };
-
-  // Log the current PWA state
   console.log({
     isInstallable,
     isInstalled,
     isInstalling,
     iOS,
+    isLoggedIn,
   });
 
   return (
@@ -108,7 +59,7 @@ function App() {
               <OnboardingSlides
                 onComplete={() => {
                   localStorage.setItem('onboardingComplete', 'true');
-                  navigate('/setup-pin'); // Navigate to PIN setup after onboarding
+                  navigate('/setup-pin');
                 }}
               />
             }
@@ -120,32 +71,17 @@ function App() {
           <>
             <Route
               path="/setup-pin"
-              element={
-                <PinSetupPage
-                  onComplete={(pin: string) => {
-                    localStorage.setItem('userPin', pin);
-                    navigate('/login', { replace: true }); // Navigate to login after setting PIN
-                  }}
-                />
-              }
+              element={<PinSetupPage onComplete={handlePinSetupComplete} />}
             />
-            <Route path="*" element={<Navigate to="/setup-pin" />} />
+            <Route path="*" element={<Navigate to="/setup-pin" replace />} />
           </>
         )}
 
         {/* PIN login route */}
         {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
           <>
-            <Route
-              path="/login"
-              element={
-                <PinLoginPage
-                  onLogin={handleLogin}
-                  requiredPin={localStorage.getItem('userPin') || ''}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="/login" element={<PinLoginPage onLogin={login} />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         )}
 
@@ -176,7 +112,8 @@ function App() {
                       element={<ContactInfoPage />}
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
-                    <Route path="/Success" element={<SuccessPage />} />
+                    <Route path="/success" element={<SuccessPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />
@@ -189,4 +126,11 @@ function App() {
   );
 }
 
-export default App;
+// Wrap App in AuthProvider
+export default function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
