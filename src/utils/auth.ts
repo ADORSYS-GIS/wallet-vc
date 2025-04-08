@@ -13,9 +13,7 @@ export async function registerUser() {
     const errorElement = document.getElementById('error');
     if (!errorElement) throw new Error('error element not found');
 
-    console.log('Starting WebAuthn registration with handleRegister...');
     await handleRegister();
-    console.log('WebAuthn registration completed successfully');
 
     // Validate that registration was successful by checking localStorage
     const credentialId = localStorage.getItem('credentialId');

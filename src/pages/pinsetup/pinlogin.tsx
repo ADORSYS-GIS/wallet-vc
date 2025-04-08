@@ -42,7 +42,6 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
       }
 
       const storedPin = getPin(messages);
-      console.log('Stored PIN:', storedPin); // Debug log
 
       if (!storedPin) {
         setError('No PIN set up or invalid PIN data. Please register.');
