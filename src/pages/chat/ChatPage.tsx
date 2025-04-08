@@ -64,17 +64,14 @@ const ChatPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check mediatorDid synchronously during component initialization
   const mediatorDid = localStorage.getItem('mediatorDid');
   const [isMediatorDidMissing, setIsMediatorDidMissing] =
     useState<boolean>(!mediatorDid);
 
-  // Update isMediatorDidMissing if mediatorDid changes (e.g., via localStorage updates)
   useEffect(() => {
     setIsMediatorDidMissing(!mediatorDid);
   }, [mediatorDid]);
 
-  // Add unread status repository
   const unreadStatusRepository = useMemo(
     () => new UnreadStatusRepository(),
     [],
@@ -113,7 +110,6 @@ const ChatPage: React.FC = () => {
   const securityService = new SecurityService();
   const didIdentityService = new DIDIdentityService(eventBus, securityService);
 
-  // Fetch and decrypt PIN on mount, then clear it from state after use
   useEffect(() => {
     if (isMediatorDidMissing) return;
 
@@ -140,7 +136,6 @@ const ChatPage: React.FC = () => {
         }
         setSecretPinNumber(parsedPin);
       } catch (err) {
-        // Handle WebAuthn cancellation (NotAllowedError)
         if (err instanceof DOMException && err.name === 'NotAllowedError') {
           setError(
             'Authentication canceled by user, redirecting to contacts...',
@@ -151,7 +146,6 @@ const ChatPage: React.FC = () => {
             });
           }, 3000);
         } else {
-          // Handle other errors with a friendly message
           const errorMessage =
             err instanceof Error
               ? err.message
@@ -239,7 +233,6 @@ const ChatPage: React.FC = () => {
             setContactName(response.payload.name);
             setContactDID(response.payload.did);
             setErrorMessage(null);
-            // Reset unread count when entering chat
             unreadStatusRepository.resetUnreadCount(response.payload.did);
           } else {
             setErrorMessage('Failed to fetch contact details.');
@@ -278,6 +271,15 @@ const ChatPage: React.FC = () => {
     } catch (error) {
       console.error('Error sending message:', error);
     }
+  };
+
+  // Handle "Enter" key press to send the message
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage();
+    }
+    // If Shift + Enter is pressed, the default behavior (new line) will occur
   };
 
   useEffect(() => {
@@ -348,14 +350,12 @@ const ChatPage: React.FC = () => {
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
 
-        // Check for new incoming messages and mark them as read
         const newMessages = sortedMessages.filter(
           (msg) =>
             msg.direction === 'in' && !messages.some((m) => m.id === msg.id),
         );
 
         if (newMessages.length > 0 && contactDID) {
-          // Reset unread count when new messages are viewed
           await unreadStatusRepository.resetUnreadCount(contactDID);
         }
 
@@ -386,7 +386,7 @@ const ChatPage: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+    if (isMediatorDidMissing) return;
 
     const handleDeleteMessageEvent = (
       response: ServiceResponse<{ id: string }>,
@@ -431,7 +431,6 @@ const ChatPage: React.FC = () => {
     }));
   };
 
-  // If mediatorDid is missing, render only the modal
   if (isMediatorDidMissing) {
     return (
       <Modal open={isMediatorDidMissing} onClose={() => {}}>
@@ -468,14 +467,11 @@ const ChatPage: React.FC = () => {
     );
   }
 
-  // If mediatorDid is set, render the normal page content
   return (
     <>
-      {/* Rendering these elements to ensure they're available for WebAuthn library */}
       <div id="messageList" style={{ display: 'none' }}></div>
       <div id="error" style={{ display: 'none' }}></div>
 
-      {/* Show error message if it exists */}
       {error ? (
         <Box
           display="flex"
@@ -496,7 +492,6 @@ const ChatPage: React.FC = () => {
           )}
         </Box>
       ) : isLoading || secretPinNumber === null ? (
-        // Show loading state only if there is no error and isLoading is true
         <Box
           display="flex"
           justifyContent="center"
@@ -509,7 +504,6 @@ const ChatPage: React.FC = () => {
           </Typography>
         </Box>
       ) : (
-        // Show main content if there is no error and loading is complete
         <Box
           sx={{
             display: 'flex',
@@ -521,7 +515,6 @@ const ChatPage: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          {/* Header */}
           <Box
             sx={{
               display: 'flex',
@@ -698,6 +691,7 @@ const ChatPage: React.FC = () => {
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               maxRows={5}
               sx={{ flexGrow: 1, marginRight: 1 }}
             />
