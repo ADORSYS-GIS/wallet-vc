@@ -39,6 +39,16 @@ function App() {
 
   const sessionTimeout = 30 * 60 * 1000;
 
+  useEffect(() => {
+    if (!hasCompletedOnboarding) {
+      navigate('/onboarding', { replace: true });
+    } else if (hasCompletedOnboarding && !hasSetPin) {
+      navigate('/setup-pin', { replace: true });
+    } else if (hasCompletedOnboarding && hasSetPin && !isLoggedIn) {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate, hasCompletedOnboarding, hasSetPin, isLoggedIn]);
+
   // Reset session start time on user interaction
   useEffect(() => {
     const resetSessionTimeout = () => {
@@ -79,14 +89,14 @@ function App() {
     setIsLoggedIn(true);
     sessionStorage.setItem('isLoggedIn', 'true');
     sessionStorage.setItem('sessionStart', Date.now().toString());
-    navigate('/'); // Navigate to home after login
+    navigate('/', { replace: true }); // Navigate to home after login
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('sessionStart');
-    navigate('/login'); // Navigate to login on logout
+    navigate('/login', { replace: true }); // Navigate to login on logout
   };
 
   // Log the current PWA state
@@ -101,59 +111,59 @@ function App() {
     <ThemeProvider theme={theme}>
       <Routes>
         {/* Onboarding route */}
-        {!hasCompletedOnboarding && (
-          <Route
-            path="*"
-            element={
+        <Route
+          path="/onboarding"
+          element={
+            !hasCompletedOnboarding ? (
               <OnboardingSlides
                 onComplete={() => {
                   localStorage.setItem('onboardingComplete', 'true');
-                  navigate('/setup-pin'); // Navigate to PIN setup after onboarding
+                  navigate('/setup-pin', { replace: true }); // Navigate to PIN setup after onboarding
                 }}
               />
-            }
-          />
-        )}
+            ) : (
+              <Navigate to={hasSetPin ? (isLoggedIn ? '/' : '/login') : '/setup-pin'} replace />
+            )
+          }
+        />
 
         {/* PIN setup route */}
-        {hasCompletedOnboarding && !hasSetPin && (
-          <>
-            <Route
-              path="/setup-pin"
-              element={
-                <PinSetupPage
-                  onComplete={(pin: string) => {
-                    localStorage.setItem('userPin', pin);
-                    navigate('/login', { replace: true }); // Navigate to login after setting PIN
-                  }}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/setup-pin" />} />
-          </>
-        )}
+        <Route
+          path="/setup-pin"
+          element={
+            hasCompletedOnboarding && !hasSetPin ? (
+              <PinSetupPage
+                onComplete={(pin: string) => {
+                  localStorage.setItem('userPin', pin);
+                  navigate('/login', { replace: true }); // Navigate to login after setting PIN
+                }}
+              />
+            ) : (
+              <Navigate to={hasCompletedOnboarding ? (hasSetPin ? (isLoggedIn ? '/' : '/login') : '/setup-pin') : '/onboarding'} replace />
+            )
+          }
+        />
 
         {/* PIN login route */}
-        {hasCompletedOnboarding && hasSetPin && !isLoggedIn && (
-          <>
-            <Route
-              path="/login"
-              element={
-                <PinLoginPage
-                  onLogin={handleLogin}
-                  requiredPin={localStorage.getItem('userPin') || ''}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
+        <Route
+          path="/login"
+          element={
+            hasCompletedOnboarding && hasSetPin && !isLoggedIn ? (
+              <PinLoginPage
+                onLogin={handleLogin}
+                requiredPin={localStorage.getItem('userPin') || ''}
+              />
+            ) : (
+              <Navigate to={hasCompletedOnboarding ? (hasSetPin ? (isLoggedIn ? '/' : '/login') : '/setup-pin') : '/onboarding'} replace />
+            )
+          }
+        />
 
         {/* Main app routes with Navbar and BottomNav */}
-        {hasCompletedOnboarding && hasSetPin && isLoggedIn && (
-          <Route
-            path="*"
-            element={
+        <Route
+          path="*"
+          element={
+            hasCompletedOnboarding && hasSetPin && isLoggedIn ? (
               <>
                 <Navbar />
                 <MainSection>
@@ -177,13 +187,16 @@ function App() {
                     />
                     <Route path="/scan" element={<ScanQRCode />} />
                     <Route path="/Success" element={<SuccessPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </MainSection>
                 <BottomNav />
               </>
-            }
-          />
-        )}
+            ) : (
+              <Navigate to={hasCompletedOnboarding ? (hasSetPin ? (isLoggedIn ? '/' : '/login') : '/setup-pin') : '/onboarding'} replace />
+            )
+          }
+        />
       </Routes>
     </ThemeProvider>
   );
