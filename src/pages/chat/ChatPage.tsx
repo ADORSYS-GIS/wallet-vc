@@ -62,7 +62,8 @@ const ChatPage: React.FC = () => {
 
   // Check mediatorDid and set state
   const mediatorDid = localStorage.getItem('mediatorDid');
-  const [isMediatorDidMissing, setIsMediatorDidMissing] = useState<boolean>(!mediatorDid);
+  const [isMediatorDidMissing, setIsMediatorDidMissing] =
+    useState<boolean>(!mediatorDid);
 
   // Update isMediatorDidMissing if mediatorDid changes
   useEffect(() => {
@@ -207,14 +208,14 @@ const ChatPage: React.FC = () => {
     fetchContactDetails();
   }, [contactId, contactService, unreadStatusRepository, isMediatorDidMissing]);
 
-    // Handle "Enter" key press to send the message
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        handleSendMessage();
-      }
-      // If Shift + Enter is pressed, the default behavior (new line) will occur
-    };
+  // Handle "Enter" key press to send the message
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage();
+    }
+    // If Shift + Enter is pressed, the default behavior (new line) will occur
+  };
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !messageRouter) return;

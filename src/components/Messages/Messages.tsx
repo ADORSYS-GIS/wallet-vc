@@ -21,7 +21,15 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
-import { Badge, Box, Button, Modal, Paper, Tooltip, Typography } from '@mui/material';
+import {
+  Badge,
+  Box,
+  Button,
+  Modal,
+  Paper,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnreadStatusRepository } from '../../utils/UnreadStatusRepository';
@@ -43,7 +51,8 @@ const Messages: React.FC = () => {
 
   // Check mediatorDid and set state
   const mediatorDid = localStorage.getItem('mediatorDid');
-  const [isMediatorDidMissing, setIsMediatorDidMissing] = useState<boolean>(!mediatorDid);
+  const [isMediatorDidMissing, setIsMediatorDidMissing] =
+    useState<boolean>(!mediatorDid);
 
   // Update isMediatorDidMissing if mediatorDid changes
   useEffect(() => {
