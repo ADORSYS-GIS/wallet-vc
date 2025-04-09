@@ -21,12 +21,11 @@ import {
   ServiceResponse,
   ServiceResponseStatus,
 } from '@adorsys-gis/status-service';
-import { Badge, Box, Paper, Tooltip, Typography } from '@mui/material';
+import { Badge, Box, Button, Modal, Paper, Tooltip, Typography } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnreadStatusRepository } from '../../utils/UnreadStatusRepository';
 
-// A set to track processed messages, scoped globally but reset per component lifecycle if needed
 const processedMessages = new Set<string>();
 
 const Messages: React.FC = () => {
@@ -41,6 +40,15 @@ const Messages: React.FC = () => {
   const [secretPinNumber, setSecretPinNumber] = useState<number | null>(null);
   const [messagingDID, setMessagingDID] = useState<string | null>(null);
   const [didForMediation, setDidForMediation] = useState<string | null>(null);
+
+  // Check mediatorDid and set state
+  const mediatorDid = localStorage.getItem('mediatorDid');
+  const [isMediatorDidMissing, setIsMediatorDidMissing] = useState<boolean>(!mediatorDid);
+
+  // Update isMediatorDidMissing if mediatorDid changes
+  useEffect(() => {
+    setIsMediatorDidMissing(!mediatorDid);
+  }, [mediatorDid]);
 
   const contactService = useMemo(() => new ContactService(eventBus), []);
   const messageService = useMemo(() => new MessageService(eventBus), []);
@@ -62,6 +70,8 @@ const Messages: React.FC = () => {
 
   // Fetch DIDs
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const securityService = new SecurityService();
     const didIdentityService = new DIDIdentityService(
       eventBus,
@@ -108,7 +118,7 @@ const Messages: React.FC = () => {
         handleMediatorDIDResponse,
       );
     };
-  }, []);
+  }, [isMediatorDidMissing]);
 
   const messagePickup = useMemo(() => {
     if (secretPinNumber !== null) {
@@ -121,9 +131,6 @@ const Messages: React.FC = () => {
     return null;
   }, [didRepository, secretPinNumber, messageRepository]);
 
-  const mediatorDid = localStorage.getItem('mediatorDid');
-  if (!mediatorDid) throw new Error('mediatorDid is not set in local storage');
-
   const openChat = async (contactId: number | undefined) => {
     if (!contactId) return;
     const contact = contacts.find((c) => c.id === contactId);
@@ -135,6 +142,8 @@ const Messages: React.FC = () => {
 
   // Fetch contacts
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const handleContactsReceived = (response: ServiceResponse<Contact[]>) => {
       if (
         response.status === ServiceResponseStatus.Success &&
@@ -148,10 +157,12 @@ const Messages: React.FC = () => {
     return () => {
       eventBus.off(ContactEventChannel.GetAllContacts, handleContactsReceived);
     };
-  }, [contactService]);
+  }, [contactService, isMediatorDidMissing]);
 
   // Initialize unread counts
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const initializeUnreadCounts = async () => {
       const initialUnread: { [key: string]: number } = {};
       for (const contact of contacts) {
@@ -161,7 +172,7 @@ const Messages: React.FC = () => {
       setUnreadMessages(initialUnread);
     };
     if (contacts.length > 0) initializeUnreadCounts();
-  }, [contacts, unreadStatusRepository]);
+  }, [contacts, unreadStatusRepository, isMediatorDidMissing]);
 
   // Sync messages
   useEffect(() => {
@@ -169,7 +180,8 @@ const Messages: React.FC = () => {
       !messagePickup ||
       !didForMediation ||
       !messagingDID ||
-      contacts.length === 0
+      contacts.length === 0 ||
+      isMediatorDidMissing // Skip if mediatorDid is missing
     )
       return;
 
@@ -177,12 +189,12 @@ const Messages: React.FC = () => {
       for (const contact of contacts) {
         try {
           const messageCount = await messagePickup.processStatusRequest(
-            mediatorDid,
+            mediatorDid!,
             didForMediation,
           );
           if (messageCount > 0) {
             await messagePickup.processDeliveryRequest(
-              mediatorDid,
+              mediatorDid!,
               didForMediation,
               messagingDID,
             );
@@ -195,8 +207,8 @@ const Messages: React.FC = () => {
     };
 
     checkAndSyncMessages();
-    const intreval = 5000;
-    const intervalId = setInterval(checkAndSyncMessages, intreval);
+    const interval = 5000;
+    const intervalId = setInterval(checkAndSyncMessages, interval);
     return () => clearInterval(intervalId);
   }, [
     messagePickup,
@@ -205,6 +217,7 @@ const Messages: React.FC = () => {
     messageService,
     messagingDID,
     didForMediation,
+    isMediatorDidMissing,
   ]);
 
   // Handle incoming messages with deduplication
@@ -265,6 +278,8 @@ const Messages: React.FC = () => {
 
   // Register message listener
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     const handleEvent = (response: ServiceResponse<Message[]>) => {
       handleMessagesReceived(response);
     };
@@ -273,14 +288,16 @@ const Messages: React.FC = () => {
     return () => {
       eventBus.off(MessageEventChannel.GetAllByContactId, handleEvent);
     };
-  }, [handleMessagesReceived]);
+  }, [handleMessagesReceived, isMediatorDidMissing]);
 
   // Trigger initial message fetch
   useEffect(() => {
+    if (isMediatorDidMissing) return; // Skip if mediatorDid is missing
+
     contacts.forEach((contact) =>
       messageService.getAllMessagesByContact(contact.did),
     );
-  }, [contacts, messageService]);
+  }, [contacts, messageService, isMediatorDidMissing]);
 
   const sortedContacts = useMemo(
     () =>
@@ -297,6 +314,44 @@ const Messages: React.FC = () => {
     [contacts, lastMessages],
   );
 
+  // If mediatorDid is missing, render only the modal
+  if (isMediatorDidMissing) {
+    return (
+      <Modal open={isMediatorDidMissing} onClose={() => {}}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: { xs: '70%', sm: '40%', md: '35%', lg: '30%' },
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'rgba(255, 255, 255, 255)',
+            boxShadow: 24,
+            p: 6,
+            borderRadius: 2,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Mediator Connection Required
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            It looks like you haven’t connected to the mediator yet. Please scan
+            the mediator’s invitation to continue.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/scan')}
+            sx={{ mt: 2 }}
+          >
+            Go to Scan Page
+          </Button>
+        </Box>
+      </Modal>
+    );
+  }
+
+  // If mediatorDid is set, render the normal page content
   return (
     <Box
       sx={{
@@ -380,7 +435,7 @@ const Messages: React.FC = () => {
                 )}
               </Box>
 
-              {/*Timestamp and Unread Count on the Same Line*/}
+              {/* Timestamp and Unread Count on the Same Line */}
               <Box
                 sx={{
                   display: 'flex',
