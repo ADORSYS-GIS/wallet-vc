@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wallet-chart.fullname" . }}
+  labels:
+    app: {{ include "wallet-chart.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.wallet.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "wallet-chart.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "wallet-chart.name" . }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: '{{ .Values.wallet.image.repository }}:{{ .Values.wallet.image.tag }}'
+          imagePullPolicy: {{ .Values.wallet.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.wallet.service.targetPort }}
