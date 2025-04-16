@@ -8,7 +8,7 @@ metadata:
 spec:
   type: {{ .Values.wallet.service.type }}
   ports:
-  - name: https
+  - name: http
     port: {{ .Values.wallet.service.port }}
     targetPort: {{ .Values.wallet.service.targetPort }}
   selector:
