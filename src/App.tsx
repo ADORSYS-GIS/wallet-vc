@@ -53,17 +53,20 @@ function App() {
       <Routes>
         {/* Onboarding route */}
         {!hasCompletedOnboarding && (
-          <Route
-            path="*"
-            element={
-              <OnboardingSlides
-                onComplete={() => {
-                  localStorage.setItem('onboardingComplete', 'true');
-                  navigate('/setup-pin');
-                }}
-              />
-            }
-          />
+          <>
+            <Route
+              path="/onboarding"
+              element={
+                <OnboardingSlides
+                  onComplete={() => {
+                    localStorage.setItem('onboardingComplete', 'true');
+                    navigate('/setup-pin', { replace: true });
+                  }}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </>
         )}
 
         {/* PIN setup route */}
@@ -121,11 +124,26 @@ function App() {
             }
           />
         )}
+
+        {/* Root route to handle initial navigation */}
+        <Route
+          path="/"
+          element={
+            !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : !hasSetPin ? (
+              <Navigate to="/setup-pin" replace />
+            ) : !isLoggedIn ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <Navigate to="/wallet" replace />
+            )
+          }
+        />
       </Routes>
     </ThemeProvider>
   );
 }
-
 // Wrap App in AuthProvider
 export default function AppWithAuth() {
   return (

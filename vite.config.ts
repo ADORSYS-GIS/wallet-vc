@@ -6,7 +6,14 @@ import wasm from 'vite-plugin-wasm';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), wasm(), nodePolyfills()],
+  plugins: [
+    react(),
+    wasm(),
+    nodePolyfills({
+      include: ['buffer', 'crypto', 'stream', 'vm'],
+      globals: { Buffer: true },
+    }),
+  ],
   server: {
     port: 3000,
     open: true,
@@ -28,16 +35,17 @@ export default defineConfig({
     exclude: ['didcomm'],
     include: ['did-resolver-lib'],
   },
-
   ssr: {
     noExternal: true,
   },
-
   build: {
+    target: 'esnext',
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
-    target: 'esnext',
+    sourcemap: true,
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 2000,
   },
 });
