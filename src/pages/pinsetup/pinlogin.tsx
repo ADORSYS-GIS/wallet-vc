@@ -6,33 +6,73 @@ import {
   IconButton,
   TextField,
   Typography,
+  Link,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authenticateUser, getPin } from '../../utils/auth';
 
 interface PinLoginPageProps {
   onLogin: () => void;
-  requiredPin: string;
 }
 
-const PinLoginPage: React.FC<PinLoginPageProps> = ({
-  onLogin,
-  requiredPin,
-}) => {
+const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
   const [inputPin, setInputPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const isConfirmValid = inputPin === requiredPin;
+  const handleSubmit = async () => {
+    if (inputPin.length !== 6) {
+      setError('PIN must be exactly 6 digits.');
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (isConfirmValid) {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const messages = await authenticateUser();
+
+      // Check if messages is valid
+      if (!messages || (Array.isArray(messages) && messages.length === 0)) {
+        setError('Authentication failed or was canceled. Please try again.');
+        return;
+      }
+
+      const storedPin = getPin(messages);
+
+      if (!storedPin) {
+        setError('No PIN set up or invalid PIN data. Please register.');
+        return;
+      }
+
+      if (inputPin !== storedPin) {
+        setError('Invalid PIN. Please try again.');
+        return;
+      }
+
       setError(null);
       onLogin();
       navigate('/');
-    } else {
-      setError('Invalid PIN. Please try again.');
+      setInputPin('');
+    } catch (err) {
+      if (err instanceof Error) {
+        if (
+          (err instanceof DOMException && err.name === 'NotAllowedError') ||
+          err.name === 'AbortError' ||
+          err.message.includes('canceled')
+        ) {
+          setError('Authentication canceled. Please try again.');
+        } else {
+          setError(`Login failed: ${err.message}`);
+        }
+      } else {
+        setError('Authentication failed: An unexpected error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,6 +82,16 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
       setInputPin(value);
       setError(null);
     }
+  };
+
+  // reset the PIN or navigate back
+  const handleResetPin = () => {
+    // Clear the stored PIN and redirect to the PIN setup page
+    localStorage.removeItem('messages');
+    localStorage.removeItem('credentialId');
+    localStorage.removeItem('registrationSalt');
+    localStorage.removeItem('mediatorDid');
+    navigate('/setup-pin', { replace: true });
   };
 
   return (
@@ -129,22 +179,43 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
           onClick={handleSubmit}
           variant="contained"
           fullWidth
-          disabled={inputPin.length !== 6}
+          disabled={isLoading || inputPin.length !== 6}
           sx={{
             padding: '12px',
             fontSize: '16px',
             fontWeight: 'bold',
             borderRadius: '8px',
             textTransform: 'none',
-            backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
+            backgroundColor:
+              inputPin.length === 6 && !isLoading ? '#007BFF' : '#ccc',
             transition: '0.3s',
             '&:hover': {
-              backgroundColor: inputPin.length === 6 ? '#0056b3' : '#ccc',
+              backgroundColor:
+                inputPin.length === 6 && !isLoading ? '#0056b3' : '#ccc',
             },
+            marginBottom: 2, // Add some spacing for the reset link
           }}
         >
-          Login
+          {isLoading ? 'Authenticating...' : 'Login'}
         </Button>
+
+        {/* Optional: Add a link to reset the PIN */}
+        <Link
+          component="button"
+          variant="body2"
+          onClick={handleResetPin}
+          sx={{
+            color: '#007BFF',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+          }}
+        >
+          Forgot PIN? Reset it
+        </Link>
+
+        {/* Hidden elements to satisfy library DOM requirements */}
+        <div id="messageList" style={{ display: 'none' }}></div>
+        <div id="error" style={{ display: 'none' }}></div>
       </Box>
     </Box>
   );
