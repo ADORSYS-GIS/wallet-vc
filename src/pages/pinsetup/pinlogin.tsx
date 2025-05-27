@@ -6,11 +6,10 @@ import {
   IconButton,
   TextField,
   Typography,
-  Link,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateUser, getPin } from '../../utils/auth';
+import { authenticateUser, encryption, storage } from '../../utils/auth';
 
 interface PinLoginPageProps {
   onLogin: () => void;
@@ -33,41 +32,56 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
     setError(null);
 
     try {
+      // 1. Authenticate with WebAuthn using the helper
       const messages = await authenticateUser();
-
-      // Check if messages is valid
-      if (!messages || (Array.isArray(messages) && messages.length === 0)) {
-        setError('Authentication failed or was canceled. Please try again.');
+      if (!messages || messages.length === 0) {
+        setError('WebAuthn authentication failed.');
         return;
       }
 
-      const storedPin = getPin(messages);
+      // 2. Derive key using stored userHandle and salt
+      const saltObj = await storage.get<string>('pin_salt');
+      if (!saltObj || !saltObj.data) {
+        setError('No salt found. Please register again.');
+        return;
+      }
+      const salt = Uint8Array.from(atob(saltObj.data), c => c.charCodeAt(0));
 
-      if (!storedPin) {
+      // Use the stored userHandle for key derivation
+      const userHandleObj = await storage.get<string>('user_handle');
+      if (!userHandleObj || !userHandleObj.data) {
+        setError('No user handle found. Please register again.');
+        return;
+      }
+      const userHandle = Uint8Array.from(atob(userHandleObj.data), c => c.charCodeAt(0)).buffer;
+      const key = await encryption.generateKeyFromUserId(userHandle, salt);
+
+      // 3. Get encrypted PIN
+      const encryptedPinObj = await storage.get<ArrayBuffer>('pin');
+      if (!encryptedPinObj || !encryptedPinObj.data) {
         setError('No PIN set up or invalid PIN data. Please register.');
         return;
       }
 
-      if (inputPin !== storedPin) {
+      // 4. Decrypt PIN
+      const decryptedPin = await encryption.decryptData(encryptedPinObj.data, key);
+
+      // 5. Compare
+      if (inputPin !== decryptedPin) {
         setError('Invalid PIN. Please try again.');
         return;
       }
 
       setError(null);
       onLogin();
-      navigate('/');
+      // Wait for auth state to be updated before navigating
+      setTimeout(() => {
+        navigate('/wallet', { replace: true });
+      }, 100);
       setInputPin('');
     } catch (err) {
       if (err instanceof Error) {
-        if (
-          (err instanceof DOMException && err.name === 'NotAllowedError') ||
-          err.name === 'AbortError' ||
-          err.message.includes('canceled')
-        ) {
-          setError('Authentication canceled. Please try again.');
-        } else {
-          setError(`Login failed: ${err.message}`);
-        }
+        setError(`Login failed: ${err.message}`);
       } else {
         setError('Authentication failed: An unexpected error occurred.');
       }
@@ -82,16 +96,6 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
       setInputPin(value);
       setError(null);
     }
-  };
-
-  // reset the PIN or navigate back
-  const handleResetPin = () => {
-    // Clear the stored PIN and redirect to the PIN setup page
-    localStorage.removeItem('messages');
-    localStorage.removeItem('credentialId');
-    localStorage.removeItem('registrationSalt');
-    localStorage.removeItem('mediatorDid');
-    navigate('/setup-pin', { replace: true });
   };
 
   return (
@@ -186,32 +190,15 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
             fontWeight: 'bold',
             borderRadius: '8px',
             textTransform: 'none',
-            backgroundColor:
-              inputPin.length === 6 && !isLoading ? '#007BFF' : '#ccc',
             transition: '0.3s',
             '&:hover': {
               backgroundColor:
                 inputPin.length === 6 && !isLoading ? '#0056b3' : '#ccc',
             },
-            marginBottom: 2, // Add some spacing for the reset link
           }}
         >
           {isLoading ? 'Authenticating...' : 'Login'}
         </Button>
-
-        {/* Optional: Add a link to reset the PIN */}
-        <Link
-          component="button"
-          variant="body2"
-          onClick={handleResetPin}
-          sx={{
-            color: '#007BFF',
-            textDecoration: 'underline',
-            cursor: 'pointer',
-          }}
-        >
-          Forgot PIN? Reset it
-        </Link>
 
         {/* Hidden elements to satisfy library DOM requirements */}
         <div id="messageList" style={{ display: 'none' }}></div>

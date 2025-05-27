@@ -1,8 +1,53 @@
-import {
-  handleRegister,
-  handleAuthenticate,
-  saveMessage,
-} from '@adorsys-gis/web-auth-prf';
+import webAuth from '@adorsys-gis/web-auth';
+
+// Initialize webAuth with configuration
+const { credential, encryption, storage } = webAuth({
+  credentialOptions: {
+    rp: {
+      id: window.location.hostname,
+      name: 'Wallet VC',
+    },
+    creationOptions: {
+      authenticatorSelection: {
+        residentKey: 'required',
+        requireResidentKey: true,
+        userVerification: 'required',
+      },
+    },
+  },
+  encryptionOptions: {
+    tagLength: 128,
+  },
+  logLevel: 0, // 0 = debug
+});
+
+// Helper to get or create a salt for the user
+async function getOrCreateSalt(): Promise<Uint8Array> {
+  const saltKey = 'pin_salt';
+  let saltObj = await storage.get<string>(saltKey);
+  if (saltObj && saltObj.data) {
+    // decode base64 to Uint8Array
+    return Uint8Array.from(atob(saltObj.data), c => c.charCodeAt(0));
+  }
+  // create new salt
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  // store as base64
+  await storage.save(saltKey, { data: btoa(String.fromCharCode(...salt)) });
+  return salt;
+}
+
+// Helper to get or create a userHandle for key derivation
+async function getOrCreateUserHandle(): Promise<ArrayBuffer> {
+  const userHandleKey = 'user_handle';
+  let userHandleObj = await storage.get<string>(userHandleKey);
+  if (userHandleObj && userHandleObj.data) {
+    return Uint8Array.from(atob(userHandleObj.data), c => c.charCodeAt(0)).buffer;
+  }
+  // create new userHandle
+  const userHandle = crypto.getRandomValues(new Uint8Array(32));
+  await storage.save(userHandleKey, { data: btoa(String.fromCharCode(...userHandle)) });
+  return userHandle.buffer;
+}
 
 // Register user with WebAuthn
 export async function registerUser() {
@@ -13,15 +58,19 @@ export async function registerUser() {
     const errorElement = document.getElementById('error');
     if (!errorElement) throw new Error('error element not found');
 
-    await handleRegister();
+    // Use a reproducible userHandle for registration and key derivation
+    const userHandle = await getOrCreateUserHandle();
 
-    // Validate that registration was successful by checking localStorage
-    const credentialId = localStorage.getItem('credentialId');
-    const registrationSalt = localStorage.getItem('registrationSalt');
-    if (!credentialId || !registrationSalt) {
-      throw new Error(
-        'Registration failed: Credential ID or registration salt not stored',
-      );
+    const result = await credential.register({
+      user: {
+        ...( { id: new Uint8Array(userHandle) } as any ),
+        name: 'Wallet User',
+        displayName: 'Wallet User',
+      },
+    });
+
+    if (!result) {
+      throw new Error('Registration failed: No credential returned');
     }
 
     return true;
@@ -31,21 +80,15 @@ export async function registerUser() {
   }
 }
 
-// Authenticate user and return decrypted messages
+// Authenticate user
 export async function authenticateUser(): Promise<string[]> {
   try {
-    // Check if authentication was aborted
-    const abortController = new AbortController();
-    const timeout = setTimeout(() => abortController.abort(), 30000);
-
-    const decryptedMessages = await handleAuthenticate();
-    clearTimeout(timeout);
-
-    if (!Array.isArray(decryptedMessages)) {
-      console.warn('Unexpected authentication result');
+    const result = await credential.authenticate();
+    if (!result) {
+      console.warn('Authentication failed: No result returned');
       return [];
     }
-    return decryptedMessages;
+    return [result.userHandle.toString()];
   } catch (error) {
     console.error('Authentication failed:', error);
 
@@ -63,25 +106,14 @@ export async function authenticateUser(): Promise<string[]> {
   }
 }
 
-export function getPin(messages: string[] | undefined): string | null {
-  if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    console.warn('No valid messages found for PIN extraction');
-    return null;
-  }
-  return messages[0];
-}
-
 // Store encrypted PIN
 export async function storePin(pin: string) {
   try {
-    const input = document.createElement('input');
-    input.id = 'messageInput';
-    input.value = pin;
-    document.body.appendChild(input);
-
-    await saveMessage();
-
-    document.body.removeChild(input);
+    const salt = await getOrCreateSalt();
+    const userHandle = await getOrCreateUserHandle();
+    const key = await encryption.generateKeyFromUserId(userHandle, salt);
+    const encryptedPin = await encryption.encryptData(pin, key);
+    await storage.save('pin', { data: encryptedPin });
     console.log('PIN encrypted and stored');
   } catch (error) {
     console.error('Failed to store PIN:', error);
@@ -89,16 +121,25 @@ export async function storePin(pin: string) {
   }
 }
 
+// Retrieve and decrypt PIN
 export async function getDecryptedPin(): Promise<string | null> {
   try {
-    const decryptedMessages = await authenticateUser();
-    if (!decryptedMessages || decryptedMessages.length === 0) {
-      console.warn('No valid messages found for PIN extraction');
+    // Require user authentication before decrypting the PIN
+    await authenticateUser();
+    const salt = await getOrCreateSalt();
+    const userHandle = await getOrCreateUserHandle();
+    const key = await encryption.generateKeyFromUserId(userHandle, salt);
+    const encryptedPinObj = await storage.get<ArrayBuffer>('pin');
+    if (!encryptedPinObj || !encryptedPinObj.data) {
+      console.warn('No encrypted PIN found');
       return null;
     }
-    return decryptedMessages[0];
+    const pin = await encryption.decryptData(encryptedPinObj.data, key);
+    return pin;
   } catch (error) {
     console.error('Failed to decrypt PIN:', error);
     throw error;
   }
 }
+
+export { credential, encryption, storage };

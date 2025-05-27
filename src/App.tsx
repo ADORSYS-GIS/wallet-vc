@@ -20,6 +20,7 @@ import SettingsPage from './pages/SettingsPage';
 import SuccessPage from './pages/SuccessPage';
 import Wallet from './pages/Wallet';
 import { AuthProvider, useAuth } from './utils/AuthContext';
+import { usePin } from './utils/PinContext';
 
 const theme = createTheme();
 
@@ -27,16 +28,14 @@ function App() {
   const { isInstallable, isInstalled, isInstalling, iOS } = usePWA();
   const navigate = useNavigate();
   const { isLoggedIn, login } = useAuth();
+  const { hasSetPin, setHasSetPin } = usePin();
 
   const hasCompletedOnboarding: boolean =
     localStorage.getItem('onboardingComplete') === 'true';
 
-  const hasSetPin: boolean =
-    localStorage.getItem('messages') !== null &&
-    JSON.parse(localStorage.getItem('messages') || '[]').length > 0;
-
   // Handle PIN setup completion
   const handlePinSetupComplete = () => {
+    setHasSetPin(true);
     navigate('/login', { replace: true });
   };
 

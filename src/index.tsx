@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
+import { PinProvider } from './utils/PinContext';
+import { AuthProvider } from './utils/AuthContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
@@ -51,7 +53,11 @@ function TempApp() {
           component={isIosOrSafariDesktop() ? 'tooltip' : 'banner'}
           installPromptTimeout={30000}
         >
-          <App />
+          <AuthProvider>
+            <PinProvider>
+              <App />
+            </PinProvider>
+          </AuthProvider>
         </InstallPWAContextProvider>
       </Box>
     </Router>

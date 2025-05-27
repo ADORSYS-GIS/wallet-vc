@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { registerUser, storePin } from '../../utils/auth';
+import { usePin } from '../../utils/PinContext';
 
 interface PinSetupPageProps {
   onComplete: (pin: string) => void;
@@ -22,6 +23,7 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
   const [showPin, setShowPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { checkPin } = usePin();
 
   const isPinValid = pin.length === 6;
   const isConfirmValid = confirmPin.length === 6 && pin === confirmPin;
@@ -44,7 +46,10 @@ const PinSetupPage: React.FC<PinSetupPageProps> = ({ onComplete }) => {
       await storePin(pin);
       console.log('PIN stored successfully');
 
-      onComplete(pin); // Call the onComplete callback to handle navigation
+      // Set PIN state in localStorage
+      localStorage.setItem('hasSetPin', 'true');
+      checkPin();
+      onComplete(pin);
     } catch (err) {
       // Handle WebAuthn cancellation specifically
       if (err instanceof DOMException && err.name === 'NotAllowedError') {

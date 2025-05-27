@@ -15,23 +15,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const navigate = useNavigate();
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
-    const sessionStart = parseInt(
-      sessionStorage.getItem('sessionStart') || '0',
-      10,
-    );
-    const currentTime = Date.now();
-    const sessionTimeout = 30 * 60 * 1000;
-    return loggedInState && currentTime - sessionStart < sessionTimeout;
+    return localStorage.getItem('isLoggedIn') === 'true';
   });
 
-  // Update sessionStorage when isLoggedIn changes
+  // Update localStorage when isLoggedIn changes
   useEffect(() => {
-    sessionStorage.setItem('isLoggedIn', isLoggedIn.toString());
+    localStorage.setItem('isLoggedIn', isLoggedIn.toString());
     if (isLoggedIn) {
-      sessionStorage.setItem('sessionStart', Date.now().toString());
+      localStorage.setItem('sessionStart', Date.now().toString());
     } else {
-      sessionStorage.removeItem('sessionStart');
+      localStorage.removeItem('sessionStart');
     }
   }, [isLoggedIn]);
 
@@ -39,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const resetSessionTimeout = () => {
       if (isLoggedIn) {
-        sessionStorage.setItem('sessionStart', Date.now().toString());
+        localStorage.setItem('sessionStart', Date.now().toString());
       }
     };
 
@@ -59,10 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkSession = () => {
       const sessionStart = parseInt(
-        sessionStorage.getItem('sessionStart') || '0',
+        localStorage.getItem('sessionStart') || '0',
         10,
       );
-      const loggedInState = sessionStorage.getItem('isLoggedIn') === 'true';
+      const loggedInState = localStorage.getItem('isLoggedIn') === 'true';
       const currentTime = Date.now();
       const sessionTimeout = 30 * 60 * 1000;
 
@@ -77,12 +70,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = () => {
     setIsLoggedIn(true);
+    localStorage.setItem('isLoggedIn', 'true');
     navigate('/', { replace: true });
   };
 
   const logout = () => {
     setIsLoggedIn(false);
-    sessionStorage.clear();
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('sessionStart');
     navigate('/login', {
       replace: true,
       state: { logoutMessage: 'Logout successful!' },
