@@ -7,8 +7,8 @@ import { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
-import { PinProvider } from './utils/PinContext';
 import { AuthProvider } from './utils/AuthContext';
+import { PinProvider } from './utils/PinContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
