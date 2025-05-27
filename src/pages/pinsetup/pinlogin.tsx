@@ -45,7 +45,7 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
         setError('No salt found. Please register again.');
         return;
       }
-      const salt = Uint8Array.from(atob(saltObj.data), c => c.charCodeAt(0));
+      const salt = Uint8Array.from(atob(saltObj.data), (c) => c.charCodeAt(0));
 
       // Use the stored userHandle for key derivation
       const userHandleObj = await storage.get<string>('user_handle');
@@ -53,7 +53,9 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
         setError('No user handle found. Please register again.');
         return;
       }
-      const userHandle = Uint8Array.from(atob(userHandleObj.data), c => c.charCodeAt(0)).buffer;
+      const userHandle = Uint8Array.from(atob(userHandleObj.data), (c) =>
+        c.charCodeAt(0),
+      ).buffer;
       const key = await encryption.generateKeyFromUserId(userHandle, salt);
 
       // 3. Get encrypted PIN
@@ -64,16 +66,23 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
       }
 
       // 4. Decrypt PIN
-      const decryptedPin = await encryption.decryptData(encryptedPinObj.data, key);
+      let decryptedPin = await encryption.decryptData(
+        encryptedPinObj.data,
+        key,
+      );
 
       // 5. Compare
       if (inputPin !== decryptedPin) {
         setError('Invalid PIN. Please try again.');
+        // Clear decryptedPin from memory
+        decryptedPin = '';
         return;
       }
 
       setError(null);
       onLogin();
+      // Clear decryptedPin from memory after use
+      decryptedPin = '';
       // Wait for auth state to be updated before navigating
       setTimeout(() => {
         navigate('/wallet', { replace: true });

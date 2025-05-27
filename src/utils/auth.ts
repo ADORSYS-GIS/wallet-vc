@@ -27,7 +27,7 @@ async function getOrCreateSalt(): Promise<Uint8Array> {
   let saltObj = await storage.get<string>(saltKey);
   if (saltObj && saltObj.data) {
     // decode base64 to Uint8Array
-    return Uint8Array.from(atob(saltObj.data), c => c.charCodeAt(0));
+    return Uint8Array.from(atob(saltObj.data), (c) => c.charCodeAt(0));
   }
   // create new salt
   const salt = crypto.getRandomValues(new Uint8Array(32));
@@ -41,11 +41,14 @@ async function getOrCreateUserHandle(): Promise<ArrayBuffer> {
   const userHandleKey = 'user_handle';
   let userHandleObj = await storage.get<string>(userHandleKey);
   if (userHandleObj && userHandleObj.data) {
-    return Uint8Array.from(atob(userHandleObj.data), c => c.charCodeAt(0)).buffer;
+    return Uint8Array.from(atob(userHandleObj.data), (c) => c.charCodeAt(0))
+      .buffer;
   }
   // create new userHandle
   const userHandle = crypto.getRandomValues(new Uint8Array(32));
-  await storage.save(userHandleKey, { data: btoa(String.fromCharCode(...userHandle)) });
+  await storage.save(userHandleKey, {
+    data: btoa(String.fromCharCode(...userHandle)),
+  });
   return userHandle.buffer;
 }
 
@@ -63,7 +66,7 @@ export async function registerUser() {
 
     const result = await credential.register({
       user: {
-        ...( { id: new Uint8Array(userHandle) } as any ),
+        ...({ id: new Uint8Array(userHandle) } as any),
         name: 'Wallet User',
         displayName: 'Wallet User',
       },
