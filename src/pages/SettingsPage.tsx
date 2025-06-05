@@ -5,7 +5,12 @@ import UploadIcon from '@mui/icons-material/Upload';
 import {
   Alert,
   Box,
+  Button, // Add Button for dialog actions
   Dialog,
+  DialogActions, // Add DialogActions for dialog buttons
+  DialogContent, // Add DialogContent for dialog text
+  DialogContentText, // Add DialogContentText for dialog message
+  DialogTitle, // Add DialogTitle for dialog title
   IconButton,
   Snackbar,
   Typography,
@@ -14,22 +19,31 @@ import jsQR from 'jsqr';
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import AddContactForm from '../pages/contact/AddContactForm';
+import { useAuth } from '../utils/AuthContext';
 
 const Settings: React.FC = () => {
-  const [logoutMessage, setLogoutMessage] = useState(false);
+  const { logout } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [scannedDid, setScannedDid] = useState<string | null>(null);
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // State for logout confirmation dialog
 
-  // Ref to access the file input element
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    setLogoutMessage(true);
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 1000);
+  // Open the logout confirmation dialog
+  const handleOpenLogoutDialog = () => {
+    setOpenLogoutDialog(true);
+  };
+
+  // Close the logout confirmation dialog
+  const handleCloseLogoutDialog = () => {
+    setOpenLogoutDialog(false);
+  };
+
+  // Handle logout confirmation (Yes button)
+  const handleConfirmLogout = () => {
+    setOpenLogoutDialog(false); // Close the dialog
+    logout(); // Proceed with logout
   };
 
   const handleQRUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +53,6 @@ const Settings: React.FC = () => {
       return;
     }
 
-    // Create a new Image object for each upload to avoid caching issues
     const img = new Image();
     let objectUrl: string | null = null;
 
@@ -62,7 +75,7 @@ const Settings: React.FC = () => {
       context.drawImage(img, 0, 0, img.width, img.height);
       const imageData = context.getImageData(0, 0, img.width, img.height);
       const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'attemptBoth', // Try both normal and inverted colors
+        inversionAttempts: 'attemptBoth',
       });
 
       if (!qrCode) {
@@ -105,7 +118,6 @@ const Settings: React.FC = () => {
       );
       if (objectUrl) URL.revokeObjectURL(objectUrl);
 
-      // Reset the file input on error
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -119,7 +131,6 @@ const Settings: React.FC = () => {
     setOpenModal(false);
     setScannedDid(null);
 
-    // Reset the file input when the modal closes
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -189,7 +200,7 @@ const Settings: React.FC = () => {
               id="qr-upload"
               type="file"
               onChange={handleQRUpload}
-              ref={fileInputRef} // Attach the ref to the input
+              ref={fileInputRef}
             />
             <IconButton
               component="span"
@@ -206,7 +217,7 @@ const Settings: React.FC = () => {
         <Box sx={{ textAlign: 'center' }}>
           <IconButton
             color="primary"
-            onClick={handleLogout}
+            onClick={handleOpenLogoutDialog} // Open the dialog instead of logging out directly
             sx={{
               fontSize: 40,
               color: '#0063F7',
@@ -222,29 +233,6 @@ const Settings: React.FC = () => {
           </Typography>
         </Box>
       </Box>
-
-      <Snackbar
-        open={logoutMessage}
-        autoHideDuration={3000}
-        onClose={() => setLogoutMessage(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setLogoutMessage(false)}
-          severity="success"
-          sx={{
-            width: '100%',
-            backgroundColor: '#0063F7',
-            color: 'white',
-            fontWeight: 600,
-            padding: '10px',
-            borderRadius: '5px',
-            boxShadow: 2,
-          }}
-        >
-          Logout successful!
-        </Alert>
-      </Snackbar>
 
       <Snackbar
         open={!!errorMessage}
@@ -276,11 +264,33 @@ const Settings: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        {/* Rendering modal */}
         <AddContactForm
           initialScannedDid={scannedDid}
           onClose={handleCloseModal}
         />
+      </Dialog>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={openLogoutDialog}
+        onClose={handleCloseLogoutDialog}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+      >
+        <DialogTitle id="logout-dialog-title">Confirm Logout</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="logout-dialog-description">
+            Are you sure you want to logout?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLogoutDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmLogout} color="primary" autoFocus>
+            Yes
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

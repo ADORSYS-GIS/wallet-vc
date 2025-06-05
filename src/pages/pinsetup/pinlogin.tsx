@@ -9,30 +9,93 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authenticateUser, encryption, storage } from '../../utils/auth';
 
 interface PinLoginPageProps {
   onLogin: () => void;
-  requiredPin: string;
 }
 
-const PinLoginPage: React.FC<PinLoginPageProps> = ({
-  onLogin,
-  requiredPin,
-}) => {
+const PinLoginPage: React.FC<PinLoginPageProps> = ({ onLogin }) => {
   const [inputPin, setInputPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const isConfirmValid = inputPin === requiredPin;
+  const handleSubmit = async () => {
+    if (inputPin.length !== 6) {
+      setError('PIN must be exactly 6 digits.');
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (isConfirmValid) {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 1. Authenticate with WebAuthn using the helper
+      const messages = await authenticateUser();
+      if (!messages || messages.length === 0) {
+        setError('WebAuthn authentication failed.');
+        return;
+      }
+
+      // 2. Derive key using stored userHandle and salt
+      const saltObj = await storage.get<string>('pin_salt');
+      if (!saltObj || !saltObj.data) {
+        setError('No salt found. Please register again.');
+        return;
+      }
+      const salt = Uint8Array.from(atob(saltObj.data), (c) => c.charCodeAt(0));
+
+      // Use the stored userHandle for key derivation
+      const userHandleObj = await storage.get<string>('user_handle');
+      if (!userHandleObj || !userHandleObj.data) {
+        setError('No user handle found. Please register again.');
+        return;
+      }
+      const userHandle = Uint8Array.from(atob(userHandleObj.data), (c) =>
+        c.charCodeAt(0),
+      ).buffer;
+      const key = await encryption.generateKeyFromUserId(userHandle, salt);
+
+      // 3. Get encrypted PIN
+      const encryptedPinObj = await storage.get<ArrayBuffer>('pin');
+      if (!encryptedPinObj || !encryptedPinObj.data) {
+        setError('No PIN set up or invalid PIN data. Please register.');
+        return;
+      }
+
+      // 4. Decrypt PIN
+      let decryptedPin = await encryption.decryptData(
+        encryptedPinObj.data,
+        key,
+      );
+
+      // 5. Compare
+      if (inputPin !== decryptedPin) {
+        setError('Invalid PIN. Please try again.');
+        // Clear decryptedPin from memory
+        decryptedPin = '';
+        return;
+      }
+
       setError(null);
       onLogin();
-      navigate('/');
-    } else {
-      setError('Invalid PIN. Please try again.');
+      // Clear decryptedPin from memory after use
+      decryptedPin = '';
+      // Wait for auth state to be updated before navigating
+      setTimeout(() => {
+        navigate('/wallet', { replace: true });
+      }, 100);
+      setInputPin('');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(`Login failed: ${err.message}`);
+      } else {
+        setError('Authentication failed: An unexpected error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -129,22 +192,26 @@ const PinLoginPage: React.FC<PinLoginPageProps> = ({
           onClick={handleSubmit}
           variant="contained"
           fullWidth
-          disabled={inputPin.length !== 6}
+          disabled={isLoading || inputPin.length !== 6}
           sx={{
             padding: '12px',
             fontSize: '16px',
             fontWeight: 'bold',
             borderRadius: '8px',
             textTransform: 'none',
-            backgroundColor: inputPin.length === 6 ? '#007BFF' : '#ccc',
             transition: '0.3s',
             '&:hover': {
-              backgroundColor: inputPin.length === 6 ? '#0056b3' : '#ccc',
+              backgroundColor:
+                inputPin.length === 6 && !isLoading ? '#0056b3' : '#ccc',
             },
           }}
         >
-          Login
+          {isLoading ? 'Authenticating...' : 'Login'}
         </Button>
+
+        {/* Hidden elements to satisfy library DOM requirements */}
+        <div id="messageList" style={{ display: 'none' }}></div>
+        <div id="error" style={{ display: 'none' }}></div>
       </Box>
     </Box>
   );
