@@ -27,9 +27,10 @@ The wallet Helm chart has been migrated to use the [bjw-s app-template](https://
   helm dependency update ./wallet-chart
   helm lint ./wallet-chart
   ```
+
 - For local testing, see [minikube.md](minikube.md) for minikube-specific instructions.
 
 ## References
 
 - [bjw-s app-template documentation](https://bjw-s-labs.github.io/helm-charts/docs/)
-- [Helm Best Practices](https://helm.sh/docs/chart_best_practices/) 
+- [Helm Best Practices](https://helm.sh/docs/chart_best_practices/)
