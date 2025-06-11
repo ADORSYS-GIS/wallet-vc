@@ -117,3 +117,7 @@ src/
 - DIDComm Protocol Specification
 - Material-UI for the UI components
 - React community for the amazing ecosystem
+
+## Helm Chart Migration
+
+The wallet Helm chart has been migrated to use the [bjw-s app-template](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/other/app-template) for standardized deployment and maintainability. For migration rationale, technical details, and usage, see [chart-refactor.md](docs/chart-refactor.md).

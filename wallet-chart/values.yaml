@@ -1,24 +1,74 @@
-fullnameOverride: wallet
-dnsHostname: demo-wallet.eudi-adorsys.com
+# ============================================================================
+# Demo Wallet Helm Chart Values
+# Uses bjw-s app-template for standardized deployment
+# ============================================================================
 
-wallet:
-  image:
+# Reusable anchors
+
+globals:
+  image: &walletImage
     repository: ghcr.io/adorsys-gis/wallet-vc
     tag: latest
     pullPolicy: Always
-  replicas: 1
+
+  ingressHost: &ingressHost 'demo-wallet.eudi-adorsys.com'
+
+  tlsHosts: &tlsHosts
+    - '*.eudi-adorsys.com'
+    - 'eudi-adorsys.com'
+
+# ============================================================================
+
+app-template:
+  global:
+    fullnameOverride: demo-wallet
+    namespace: datev-wallet
+    labels:
+      app: demo-wallet
+
+  defaultPodOptions:
+    imagePullSecrets:
+      - name: ghcr-pull-secret
+
+  controllers:
+    wallet:
+      type: deployment
+      replicas: 1
+      containers:
+        app:
+          nameOverride: demo-wallet-app
+          image: *walletImage
+          ports:
+            - name: http
+              containerPort: 80
+
   service:
-    type: ClusterIP
-    port: 8080
-    targetPort: 8080
+    app:
+      enabled: true
+      type: ClusterIP
+      controller: wallet
+      ports:
+        http:
+          enabled: true
+          port: 80
+          protocol: HTTP
+          targetPort: 80
+
   ingress:
-    ingressClassName: nginx
-    path: /
-    pathType: Prefix
-    tls:
+    app:
+      enabled: true
+      className: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        external-dns.alpha.kubernetes.io/hostname: *ingressHost
       hosts:
-        - '*.eudi-adorsys.com'
-        - 'eudi-adorsys.com'
-    secretName: eudi-adorsys-tls
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
+        - host: *ingressHost
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: app
+                port: 80
+      tls:
+        - secretName: eudi-adorsys-tls
+          hosts: *tlsHosts
