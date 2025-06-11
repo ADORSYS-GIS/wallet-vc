@@ -26,3 +26,4 @@ yarn-error.log*
 # yalc related files
 yalc.lock
 .yalc
+*.tgz
