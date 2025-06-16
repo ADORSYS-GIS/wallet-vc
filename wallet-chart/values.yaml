@@ -40,7 +40,8 @@ app-template:
           image: *walletImage
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
+              protocol: TCP
 
   service:
     app:
@@ -50,9 +51,9 @@ app-template:
       ports:
         http:
           enabled: true
-          port: 80
+          port: 8081
           protocol: HTTP
-          targetPort: 80
+          targetPort: 8080
 
   ingress:
     app:
@@ -68,7 +69,7 @@ app-template:
               pathType: Prefix
               service:
                 identifier: app
-                port: 80
+                port: 8081
       tls:
         - secretName: eudi-adorsys-tls
           hosts: *tlsHosts
