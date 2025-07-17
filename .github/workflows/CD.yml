@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test-wallet
     tags:
       - v*.*.*
 
@@ -53,6 +54,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable=${{ github.ref_type == 'branch' }}
+            ${{ github.ref == 'refs/heads/test-wallet' && 'develop-latest' || '' }}
 
       - name: Build Docker image and push to GHCR
         uses: docker/build-push-action@v6
