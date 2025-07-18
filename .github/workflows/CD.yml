@@ -54,7 +54,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             # type=raw,value=latest,enable=${{ github.ref_type == 'branch' }}
-            ${{ github.ref == 'refs/heads/test-wallet' && 'develop-latest' || '' }}
+            ${{ github.ref == 'refs/heads/test-wallet' && 'argo-test' || '' }}
 
       - name: Build Docker image and push to GHCR
         uses: docker/build-push-action@v6
