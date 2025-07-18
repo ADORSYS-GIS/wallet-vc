@@ -8,7 +8,7 @@
 globals:
   image: &walletImage
     repository: ghcr.io/adorsys-gis/wallet-vc
-    tag: develop-latest
+    tag: argo-test@sha256:f14866adbaa415c1cc8c2af6d41f448d6e3637ab83e7e8a43d59a74decbb91ba
     pullPolicy: Always
   ingressHost: &ingressHost 'demo-wallet.eudi-adorsys.com'
   tlsHosts: &tlsHosts
