@@ -20,3 +20,4 @@ jobs:
           body: "This PR contains automated updates to image versions."
           base: test-wallet
           branch: image-updates
+
