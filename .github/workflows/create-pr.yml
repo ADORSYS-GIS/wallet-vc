@@ -12,11 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Create Pull Request
-        run: |
-          echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
-          gh pr create \
-            --base test-wallet \
-            --head image-updates \
-            --title "Automated image updates" \
-            --body "This PR contains automated updates to image versions." \
-            || echo "PR already exists or cannot be created"
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Automated image updates"
+          title: "Automated image updates"
+          body: "This PR contains automated updates to image versions."
+          base: test-wallet
+          branch: image-updates
