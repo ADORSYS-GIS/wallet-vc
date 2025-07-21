@@ -65,3 +65,4 @@ app-template:
       tls:
       - secretName: eudi-adorsys-tls
         hosts: *tlsHosts
+
