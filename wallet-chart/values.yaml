@@ -63,5 +63,7 @@ app-template:
                 identifier: app
                 port: 8081
       tls:
-        - secretName: eudi-adorsys-tls
-          hosts: *tlsHosts
+
+      - secretName: eudi-adorsys-tls
+        hosts: *tlsHosts
+
