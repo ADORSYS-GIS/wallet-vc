@@ -12,13 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Create Pull Request
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
           gh pr create \
             --base test-wallet \
             --head image-updates \
             --title "Automated image updates" \
             --body "This PR contains automated updates to image versions." \
             || echo "PR already exists or cannot be created"
-
