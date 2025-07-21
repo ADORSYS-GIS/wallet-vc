@@ -1,0 +1,19 @@
+name: Create PR for Image Updates
+on:
+  push:
+    branches:
+      - image-updates
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update image versions"
+          title: "Automated image updates"
+          body: "This PR contains automated updates to image versions."
+          base: test-wallet
+          branch: image-updates
