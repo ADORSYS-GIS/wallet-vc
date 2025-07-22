@@ -9,6 +9,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT }}  
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -17,12 +19,11 @@ jobs:
         run: |
           echo "GH_TOKEN is set to: ${GH_TOKEN:-(not set)}"
           gh auth status || echo "Authentication check failed"
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Create Pull Request
         id: create_pr
         run: |
+          export GH_TOKEN  # Explicitly export GH_TOKEN for the script
           echo "Attempting to create PR..."
           pr_url=$(gh pr create \
             --base test-wallet \
@@ -40,13 +41,9 @@ jobs:
             echo "No new PR created (it may already exist or authentication failed)."
             echo "pull-request-number=" >> $GITHUB_OUTPUT
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Enable Auto-Merge
         if: steps.create_pr.outputs.pull-request-number
         run: |
           echo "Attempting to merge PR #${{ steps.create_pr.outputs.pull-request-number }}"
           gh pr merge ${{ steps.create_pr.outputs.pull-request-number }} --squash --auto
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
