@@ -39,6 +39,6 @@ jobs:
             -d '{
               "title": "Automated image updates",
               "head": "image-updates",
-              "base": "develop",
+              "base": "test-wallet",
               "body": "This PR contains automated updates to image versions."
             }'
