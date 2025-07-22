@@ -9,15 +9,26 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
+      metadata: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --base test-wallet \
-            --head image-updates \
-            --title "Automated image updates" \
-            --body "This PR contains automated updates to image versions." \
-            || echo "PR already exists or cannot be created"
+          # Check if PR already exists
+          if gh pr list --head image-updates --base test-wallet --state open | grep -q "image-updates"; then
+            echo "PR already exists, updating it..."
+            gh pr edit --head image-updates --title "Automated image updates" --body "This PR contains automated updates to image versions."
+          else
+            echo "Creating new PR..."
+            gh pr create \
+              --base test-wallet \
+              --head image-updates \
+              --title "Automated image updates" \
+              --body "This PR contains automated updates to image versions." \
+              || echo "Failed to create PR"
+          fi
