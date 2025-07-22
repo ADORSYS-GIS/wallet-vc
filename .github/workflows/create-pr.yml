@@ -10,13 +10,32 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Create Pull Request
+        id: create_pr
         run: |
           echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
-          gh pr create \
+          pr_url=$(gh pr create \
             --base test-wallet \
             --head image-updates \
             --title "Automated image updates" \
-            --body "This PR contains automated updates to image versions." \
-            || echo "PR already exists or cannot be created"
+            --body "This PR contains automated updates to image versions from Argo CD Image Updater." \
+            || echo "")
+          if [[ -n "$pr_url" ]]; then
+            pr_number=$(gh pr view "$pr_url" --json number -q .number)
+            echo "pull-request-number=$pr_number" >> $GITHUB_OUTPUT
+          else
+            echo "No new PR created (it may already exist)."
+            echo "pull-request-number=" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Enable Auto-Merge
+        if: steps.create_pr.outputs.pull-request-number
+        run: |
+          gh pr merge ${{ steps.create_pr.outputs.pull-request-number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
