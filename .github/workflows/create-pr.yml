@@ -16,7 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Authenticate with GitHub CLI
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
@@ -28,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           gh pr create \
-            --base develop \
+            --base test-wallet \
             --head image-updates \
             --title "Automated image updates" \
             --body "This PR contains automated updates to image versions." \
