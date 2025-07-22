@@ -10,7 +10,7 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      GH_TOKEN: ${{ secrets.GH_PAT }}  
+      GH_TOKEN: ${{ secrets.GH_PAT }}  # Set at job level
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -18,12 +18,16 @@ jobs:
       - name: Verify Authentication
         run: |
           echo "GH_TOKEN is set to: ${GH_TOKEN:-(not set)}"
+          if [ -z "$GH_TOKEN" ]; then
+            echo "GH_TOKEN is not set, using GITHUB_TOKEN as fallback."
+            GH_TOKEN=${{ github.token }}
+            echo "Fallback GH_TOKEN is set to: ${GH_TOKEN:-(not set)}"
+          fi
           gh auth status || echo "Authentication check failed"
 
       - name: Create Pull Request
         id: create_pr
         run: |
-          export GH_TOKEN  # Explicitly export GH_TOKEN for the script
           echo "Attempting to create PR..."
           pr_url=$(gh pr create \
             --base test-wallet \
@@ -47,3 +51,4 @@ jobs:
         run: |
           echo "Attempting to merge PR #${{ steps.create_pr.outputs.pull-request-number }}"
           gh pr merge ${{ steps.create_pr.outputs.pull-request-number }} --squash --auto
+          
