@@ -11,11 +11,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_PAT || github.token }}
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create \
             --base test-wallet \
