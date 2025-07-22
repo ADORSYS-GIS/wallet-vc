@@ -1,29 +1,49 @@
 name: Create PR for Image Updates
+
 on:
   push:
     branches:
       - image-updates
+
 jobs:
   create-pr:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Debug Token
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
         run: |
-          echo "Checking authentication status..."
-          gh auth status
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt update
+          sudo apt install -y gh
+
+      - name: Debug Environment
+        run: |
+          echo "GitHub CLI version:"
+          gh --version
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Token is set: ${{ secrets.GITHUB_TOKEN != '' }}"
+
       - name: Check for Existing PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
           existing_pr=$(gh pr list --base develop --head image-updates --state open --json number --jq '.[0].number')
           if [ -n "$existing_pr" ]; then
             echo "PR already exists: #$existing_pr"
             exit 0
           fi
+
       - name: Create Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --base develop \
@@ -31,4 +51,3 @@ jobs:
             --title "Automated image updates" \
             --body "This PR contains automated updates to image versions." \
             || echo "Failed to create PR"
-            
