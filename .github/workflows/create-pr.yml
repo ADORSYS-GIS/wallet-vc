@@ -15,7 +15,7 @@ jobs:
         run: |
           echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
           gh pr create \
-            --base main \
+            --base test-wallet \
             --head image-updates \
             --title "Automated image updates" \
             --body "This PR contains automated updates to image versions." \
