@@ -8,7 +8,7 @@
 globals:
   image: &walletImage
     repository: ghcr.io/adorsys-gis/wallet-vc
-    tag: latest@sha256:9741b52426d86e91d20eaf027fc2850e17a602557ebdac478176891598372282
+    tag: latest@sha256:0c85905a493396dc3d35093b0a1a9180cfc6ff38ca64b33f19f790f50011ca7f
     pullPolicy: Always
   ingressHost: &ingressHost 'demo-wallet.eudi-adorsys.com'
   tlsHosts: &tlsHosts
@@ -65,4 +65,3 @@ app-template:
       tls:
       - secretName: eudi-adorsys-tls
         hosts: *tlsHosts
-
