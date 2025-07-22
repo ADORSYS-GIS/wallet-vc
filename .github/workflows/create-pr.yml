@@ -16,7 +16,6 @@ jobs:
       - name: Create Pull Request
         id: create_pr
         run: |
-          echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
           pr_url=$(gh pr create \
             --base test-wallet \
             --head image-updates \
