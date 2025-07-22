@@ -16,36 +16,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install GitHub CLI (from .deb)
-        run: |
-          curl -LO https://github.com/cli/cli/releases/download/v2.45.0/gh_2.45.0_linux_amd64.deb
-          sudo dpkg -i gh_2.45.0_linux_amd64.deb
-
-      - name: Debug Environment
-        run: |
-          echo "GitHub CLI version:"
-          gh --version
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Actor: $GITHUB_ACTOR"
-          echo "Token is set: ${{ secrets.GITHUB_TOKEN != '' }}"
-
       - name: Check for Existing PR
+        id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          existing_pr=$(gh pr list --base develop --head image-updates --state open --json number --jq '.[0].number')
-          if [ -n "$existing_pr" ]; then
-            echo "PR already exists: #$existing_pr"
-            exit 0
-          fi
+          pr_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:image-updates&base=develop&state=open")
+          
+          pr_number=$(echo "$pr_response" | jq '.[0].number // empty')
+          echo "Found PR #: $pr_number"
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
 
-      - name: Create Pull Request
+      - name: Create Pull Request (via REST API)
+        if: steps.check_pr.outputs.pr_number == ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --base develop \
-            --head image-updates \
-            --title "Automated image updates" \
-            --body "This PR contains automated updates to image versions." \
-            || echo "Failed to create PR"
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d '{
+              "title": "Automated image updates",
+              "head": "image-updates",
+              "base": "develop",
+              "body": "This PR contains automated updates to image versions."
+            }'
