@@ -18,7 +18,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           API_URL="https://api.github.com/repos/${{ github.repository }}/pulls"
-          
+
           # Check if PR already exists
           PR_EXISTS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" $API_URL?head=${{ github.repository_owner }}:image-updates | jq '.[0].number // empty')
 
