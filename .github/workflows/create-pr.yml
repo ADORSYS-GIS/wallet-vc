@@ -13,23 +13,26 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Authenticate with GitHub CLI
+      - name: Create Pull Request using REST API
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          echo "${GH_TOKEN}" | gh auth login --with-token --hostname github.com
-          gh auth status
+          API_URL="https://api.github.com/repos/${{ github.repository }}/pulls"
+          
+          # Check if PR already exists
+          PR_EXISTS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" $API_URL?head=${{ github.repository_owner }}:image-updates | jq '.[0].number // empty')
 
-      - name: Create Pull Request
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          gh pr create \
-            --base main \
-            --head image-updates \
-            --title "Automated image updates" \
-            --body "This PR contains automated updates to image versions." \
-            || echo "PR already exists or cannot be created"
+          if [ -z "$PR_EXISTS" ]; then
+            echo "Creating pull request..."
+            curl -X POST "$API_URL" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "title": "Automated image updates",
+                "head": "image-updates",
+                "base": "main",
+                "body": "This PR contains automated updates to image versions."
+              }'
+          else
+            echo "PR already exists: #$PR_EXISTS"
+          fi
