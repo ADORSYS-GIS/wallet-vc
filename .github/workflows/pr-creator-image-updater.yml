@@ -15,16 +15,15 @@ jobs:
       - name: Create Pull Request
         uses: diillson/auto-pull-request@v1.0.1
         with:
-          source_branch: "image-update"
-          destination_branch: "main"
-          pr_title: "${{ env.GIT_COMMIT_MESSAGE_SUBJECT }}"
+          source_branch: 'image-update'
+          destination_branch: 'main'
+          pr_title: '${{ env.GIT_COMMIT_MESSAGE_SUBJECT }}'
           pr_body: |
             ${{ env.GIT_COMMIT_MESSAGE_SUBJECT }}
 
             ${{ env.GIT_COMMIT_MESSAGE_BODY }}
 
-          pr_label: "auto-pr"
-          pr_reviewer: "mbunwe-victor,Awambeng"
+          pr_label: 'auto-pr'
+          pr_reviewer: 'Awambeng'
           pr_allow_empty: true
           github_token: ${{ secrets.GH_PAT }}
- 
