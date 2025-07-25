@@ -7,11 +7,10 @@ on:
 
 jobs:
   call-pr-creator:
-
     uses: ADORSYS-GIS/datev-argo-apps/.github/workflows/pr-creator.yml@feat/create-pr-image-updater
     with:
       source_branch: image-update
-      distination_branch: add-pr-creator-workflow
+      destination_branch: add-pr-creator-workflow
     secrets:
       GH_PAT: ${{ secrets.GH_PAT }}
 
