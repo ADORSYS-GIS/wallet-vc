@@ -23,7 +23,7 @@ app-template:
       app: demo-wallet
   defaultPodOptions:
     imagePullSecrets:
-      - name: ghcr-pull-secret
+    - name: ghcr-pull-secret
   controllers:
     wallet:
       type: deployment
