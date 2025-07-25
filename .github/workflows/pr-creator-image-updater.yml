@@ -20,7 +20,7 @@ jobs:
       - name: Create Pull Request
         uses: diillson/auto-pull-request@v1.0.1
         with:
-          source_branch: 'image-update'
+          source_branch: 'image-update' # source branch
           destination_branch: 'add-pr-creator-workflow'
           pr_title: '${{ steps.commit.outputs.message }}'
           pr_body: '${{ steps.commit.outputs.message }}'
