@@ -11,4 +11,5 @@ jobs:
     with:
       source_branch: image-update
       destination_branch: add-pr-creator-workflow
-    secrets: inherit
+    secrets: {{ secrets.GH_PAT }}
+ 
