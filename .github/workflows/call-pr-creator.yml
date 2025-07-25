@@ -11,5 +11,6 @@ jobs:
     with:
       source_branch: image-update
       destination_branch: add-pr-creator-workflow
-    secrets: ${{ secrets.GH_PAT }}
+    secrets: 
+      GH_PAT: ${{ secrets.GH_PAT }}
  
