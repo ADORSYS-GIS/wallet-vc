@@ -12,4 +12,3 @@ jobs:
       source_branch: image-update
       destination_branch: add-pr-creator-workflow
     secrets: inherit
- 
