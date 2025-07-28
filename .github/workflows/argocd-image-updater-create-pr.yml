@@ -20,7 +20,7 @@ jobs:
         with:
           source_branch: 'image-update'
           destination_branch: 'add-pr-creator-workflow'
-          pr_title: ${{ replace(env.GIT_COMMIT_MESSAGE_SUBJECT, '[skip ci]', '') }}
+          pr_title: ${{ env.GIT_COMMIT_MESSAGE_SUBJECT }}
           pr_body: |
             This pull request updates container images for the application, as detected by Argo CD Image Updater.
 
