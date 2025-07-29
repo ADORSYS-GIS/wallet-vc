@@ -8,28 +8,22 @@
 globals:
   image: &walletImage
     repository: ghcr.io/adorsys-gis/wallet-vc
-    tag: latest
+    tag: latest@sha256:59657c822732f2ec3f0058f51c6562d9f5b258bffa5c08adb4b09e9b89e8fc88
     pullPolicy: Always
-
   ingressHost: &ingressHost 'demo-wallet.eudi-adorsys.com'
-
   tlsHosts: &tlsHosts
-    - '*.eudi-adorsys.com'
-    - 'eudi-adorsys.com'
-
+  - '*.eudi-adorsys.com'
+  - 'eudi-adorsys.com'
 # ============================================================================
-
 app-template:
   global:
     fullnameOverride: demo-wallet
     namespace: datev-wallet
     labels:
       app: demo-wallet
-
   defaultPodOptions:
     imagePullSecrets:
-      - name: ghcr-pull-secret
-
+    - name: ghcr-pull-secret
   controllers:
     wallet:
       type: deployment
@@ -39,10 +33,9 @@ app-template:
           nameOverride: demo-wallet-app
           image: *walletImage
           ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-
+          - name: http
+            containerPort: 8080
+            protocol: TCP
   service:
     app:
       enabled: true
@@ -54,7 +47,6 @@ app-template:
           port: 8081
           protocol: HTTP
           targetPort: 8080
-
   ingress:
     app:
       enabled: true
@@ -63,13 +55,13 @@ app-template:
         cert-manager.io/cluster-issuer: letsencrypt-prod
         external-dns.alpha.kubernetes.io/hostname: *ingressHost
       hosts:
-        - host: *ingressHost
-          paths:
-            - path: /
-              pathType: Prefix
-              service:
-                identifier: app
-                port: 8081
+      - host: *ingressHost
+        paths:
+        - path: /
+          pathType: Prefix
+          service:
+            identifier: app
+            port: 8081
       tls:
-        - secretName: eudi-adorsys-tls
-          hosts: *tlsHosts
+      - secretName: eudi-adorsys-tls
+        hosts: *tlsHosts
