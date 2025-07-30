@@ -14,6 +14,7 @@ globals:
   tlsHosts: &tlsHosts
     - '*.eudi-adorsys.com'
     - 'eudi-adorsys.com'
+
 # ============================================================================
 app-template:
   global:
