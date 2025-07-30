@@ -62,8 +62,15 @@ jobs:
           FULL_MESSAGE="$(git log -1 --pretty=%B)"
           TITLE="$(echo "$FULL_MESSAGE" | head -n 1)"
           BODY="$(echo "$FULL_MESSAGE" | tail -n +2)"
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          echo "body=$BODY" >> $GITHUB_OUTPUT
+
+          {
+            echo "title<<EOF"
+            echo "$TITLE"
+            echo "EOF"
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: diillson/auto-pull-request@v1.0.1
