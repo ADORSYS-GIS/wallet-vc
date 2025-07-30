@@ -15,12 +15,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    # Skip if commit message is from ArgoCD Image Updater or the formatting bot
-    if: >
-      !(
-        startsWith(github.event.head_commit.message, 'chore: update images for') ||
-        startsWith(github.event.head_commit.message, 'chore: auto-fix formatting and linting')
-      )
+    # Skip this job if the pull request title or commit message in a merge commit
+    # contains 'image-updates' (used by ArgoCD Image Updater)
+    if: ${{ !contains(github.event.head_commit.message, 'image-updates') }}
 
     permissions:
       contents: read
