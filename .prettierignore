@@ -4,4 +4,4 @@
 # Project-specific paths to ignore
 /public/service-worker.js
 
-wallet-chart/templates/*.yaml
+wallet-chart/*.yaml
