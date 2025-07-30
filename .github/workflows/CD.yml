@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - image-updates
     tags:
       - v*.*.*
 
@@ -13,6 +14,13 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    # Skip if commit message is from ArgoCD Image Updater or the formatting bot
+    if: |
+      !(
+        startsWith(github.event.head_commit.message, 'chore: update images for') ||
+        github.actor == 'github-actions[bot]'
+      )
 
     permissions:
       contents: read
