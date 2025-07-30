@@ -12,9 +12,8 @@ globals:
     pullPolicy: Always
   ingressHost: &ingressHost 'demo-wallet.eudi-adorsys.com'
   tlsHosts: &tlsHosts
-    - '*.eudi-adorsys.com'
-    - 'eudi-adorsys.com'
-
+  - '*.eudi-adorsys.com'
+  - 'eudi-adorsys.com'
 # ============================================================================
 app-template:
   global:
