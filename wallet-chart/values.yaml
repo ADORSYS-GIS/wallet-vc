@@ -14,7 +14,9 @@ globals:
   tlsHosts: &tlsHosts
     - '*.eudi-adorsys.com'
     - 'eudi-adorsys.com'
+    
 # ============================================================================
+
 app-template:
   global:
     fullnameOverride: demo-wallet
@@ -47,6 +49,7 @@ app-template:
           port: 8081
           protocol: HTTP
           targetPort: 8080
+          
   ingress:
     app:
       enabled: true
@@ -55,13 +58,13 @@ app-template:
         cert-manager.io/cluster-issuer: letsencrypt-prod
         external-dns.alpha.kubernetes.io/hostname: *ingressHost
       hosts:
-        - host: *ingressHost
-          paths:
-            - path: /
-              pathType: Prefix
-              service:
-                identifier: app
-                port: 8081
+      - host: *ingressHost
+        paths:
+        - path: /
+          pathType: Prefix
+          service:
+            identifier: app
+            port: 8081
       tls:
-        - secretName: eudi-adorsys-tls
-          hosts: *tlsHosts
+      - secretName: eudi-adorsys-tls
+        hosts: *tlsHosts
